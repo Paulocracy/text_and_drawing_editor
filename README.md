@@ -1,4 +1,4 @@
-# base_server
+# basic_server
 
 *A basic configuration for a Flask Python server with JSON-based Socket.IO communication and TypeScript-derived JavaScript.*
 
