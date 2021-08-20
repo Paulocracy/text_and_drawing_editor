@@ -1,0 +1,14 @@
+name: basic_server
+channels:
+  - conda-forge
+  - anaconda
+  - defaults
+dependencies:
+  - pytest
+  - pylint
+  - autopep8
+  - pip
+  - python=3.9
+  - flask
+  - flask-rest-jsonapi
+  - flask-socketio
