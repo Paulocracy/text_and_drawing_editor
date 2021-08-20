@@ -1,15 +1,23 @@
 <!DOCTYPE html>
+<!--
+    Main HTML file for the Flask&WebSocket server.
+-->
 <html>
 <head>
+    <!-- Set startup title which can be later changed by using
+    the value document.title -->
     <title>basic_server</title>
+
+    <!--Set mostly "universal" character set which e.g.
+    includes German umlauts  (ÄÖÜäöü)-->
     <meta charset="utf-8">
 
-    <!--Scripts section-->
+    <!--JavaScript loading section-->
     <script src="{{url_for('static', filename='socket.io.js')}}"></script>
     <script src="{{url_for('static', filename='script.js')}}"></script>
 </head>
 <body>
     <!--HTML divs section-->
-    <button id="button1" onclick="a()">Click</button>
+    <button id="button1" onclick="button_function()">Click</button>
 </body>
 </html>

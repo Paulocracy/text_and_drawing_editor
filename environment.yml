@@ -10,5 +10,4 @@ dependencies:
   - pip
   - python=3.9
   - flask
-  - flask-rest-jsonapi
   - flask-socketio

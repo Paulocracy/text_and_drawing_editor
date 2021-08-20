@@ -8,6 +8,6 @@ socket.on('custom_event_2', function () {
 socket.on('custom_event_4', function () {
     socket.emit('custom_event_5', "The end.");
 });
-function a() {
+function button_function() {
     socket.emit('custom_event_1', { data: 'I\'m connected!' });
 }
