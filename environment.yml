@@ -5,6 +5,7 @@ channels:
 dependencies:
   - pytest
   - pylint
+  - mypy
   - autopep8
   - pip
   - python=3.9

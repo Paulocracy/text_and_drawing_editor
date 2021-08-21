@@ -11,13 +11,21 @@
     <!--Set mostly "universal" character set which e.g.
     includes German umlauts (ÄÖÜäöü) etc.-->
     <meta charset="utf-8">
-
-    <!--JavaScript loading section-->
-    <script src="{{url_for('static', filename='socket.io.js')}}"></script>
-    <script src="{{url_for('static', filename='script.js')}}"></script>
 </head>
 <body>
     <!--HTML divs section-->
     <button id="button1" onclick="button_function()">Click</button>
+
+    <!--CANVAS TEST BEGIN-->
+    AAA
+    <div id="force"></div>
+    <div id="touches"></div>
+    <canvas id="canvas">Unfortunately, your browser does not support canvas elements.</canvas>
+    AAA
+    <!--CANVAS TEST END-->
+
+    <!--JavaScript loading section-->
+    <script src="{{url_for('static', filename='socket.io.js')}}"></script>
+    <script src="{{url_for('static', filename='script.js')}}"></script>
 </body>
 </html>
