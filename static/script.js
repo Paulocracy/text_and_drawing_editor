@@ -14,139 +14,176 @@ socket.on('custom_event_4', function () {
 function button_function() {
     socket.emit('custom_event_1', { data: 'I\'m connected!' });
 }
-////CANVAS TEST BEGIN
+////g_canvas TEST BEGIN
 var Point = /** @class */ (function () {
-    function Point(x, y, lineWidth, color) {
+    function Point(x, y, lineWidth, color, visibleLineToIt) {
         this.x = x;
         this.y = y;
         this.lineWidth = lineWidth;
         this.color = color;
+        this.visibleLineToIt = visibleLineToIt;
     }
     return Point;
 }());
-var $force = document.querySelectorAll('#force')[0];
-var $touches = document.querySelectorAll('#touches')[0];
-var canvas = document.querySelectorAll('canvas')[0];
-var context = canvas.getContext('2d');
-var lineWidth = 0;
-var isMousedown = false;
-var points = [];
-canvas.width = window.innerWidth * 2;
-canvas.height = window.innerHeight * 2;
-var strokeHistory = [];
-function drawOnCanvas(stroke) {
-    context.strokeStyle = 'black';
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
-    var l = stroke.length - 1;
-    if (stroke.length >= 3) {
-        var xc = (stroke[l].x + stroke[l - 1].x) / 2;
-        var yc = (stroke[l].y + stroke[l - 1].y) / 2;
-        context.lineWidth = stroke[l - 1].lineWidth;
-        context.quadraticCurveTo(stroke[l - 1].x, stroke[l - 1].y, xc, yc);
-        context.stroke();
-        context.beginPath();
-        context.moveTo(xc, yc);
+var g_canvas = document.querySelectorAll('canvas')[0];
+var g_context = g_canvas.getContext('2d');
+var g_isMousedown = false;
+var g_points = [];
+var g_pointsHistory = [];
+var g_startPoint;
+var g_isLocked = false;
+g_canvas.width = 500;
+g_canvas.height = 500;
+function clear_canvas() {
+    // g_context.beginPath()
+    g_context.clearRect(0, 0, g_canvas.width, g_canvas.height);
+    // g_context.closePath()
+    // g_context.stroke()
+    g_points = [];
+    g_pointsHistory = [];
+}
+function moveAll(xMove, yMove) {
+    for (var i = 0; i < g_pointsHistory.length; i++) {
+        g_pointsHistory[i].x += xMove;
+        g_pointsHistory[i].y += yMove;
+    }
+    g_context.clearRect(0, 0, g_canvas.width, g_canvas.height);
+    drawPointsOnCanvas(g_pointsHistory);
+}
+function resizeCanvas() {
+    var newWidth = parseInt(document.forms.namedItem("canvasSize").canvasWidth.value);
+    var newHeight = parseInt(document.forms.namedItem("canvasSize").canvasHeight.value);
+    if (newWidth != NaN) {
+        g_canvas.width = newWidth;
+    }
+    if (newHeight != NaN) {
+        g_canvas.height = newHeight;
+    }
+    drawPointsOnCanvas(g_pointsHistory);
+}
+function drawPointsOnCanvas(points) {
+    g_context.lineCap = "round";
+    g_context.lineJoin = "round";
+    for (var right_index = 1; right_index < points.length; right_index++) {
+        g_context.strokeStyle = points[right_index].color;
+        g_context.lineWidth = points[right_index].lineWidth;
+        g_context.beginPath();
+        g_context.moveTo(points[right_index - 1].x, points[right_index - 1].y);
+        if (points[right_index].visibleLineToIt) {
+            g_context.lineTo(points[right_index].x, points[right_index].y);
+        }
+        g_context.closePath();
+        g_context.stroke();
+    }
+    g_points.reverse();
+    while (g_points.length > 1) {
+        g_points.pop();
+    }
+}
+function addPoint(event, visibleLineToIt, setStartPoint) {
+    var pressure;
+    var x;
+    var y;
+    var selectedDrawmode;
+    if (!setStartPoint) {
+        selectedDrawmode = document.forms.namedItem("drawmodeRadios").drawmode.value;
     }
     else {
-        var point = stroke[l];
-        context.lineWidth = point.lineWidth;
-        context.strokeStyle = point.color;
-        context.beginPath();
-        context.moveTo(point.x, point.y);
-        context.stroke();
+        selectedDrawmode = "free";
     }
-}
-/**
- * Remove the previous stroke from history and repaint the entire canvas based on history
- * @return {void}
- */
-function undoDraw() {
-    strokeHistory.pop();
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    strokeHistory.map(function (stroke) {
-        if (strokeHistory.length === 0)
-            return;
-        context.beginPath();
-        var strokePath = [];
-        stroke.map(function (point) {
-            strokePath.push(point);
-            drawOnCanvas(strokePath);
-        });
-    });
+    var pageXYhandler;
+    if (event.touches && event.touches[0] && typeof event.touches[0]["force"] !== "undefined") {
+        if (event.touches[0]["force"] > 0) {
+            var checkbox = document.getElementById("pressure");
+            if (checkbox.checked) {
+                pressure = event.touches[0]["force"];
+            }
+            else {
+                pressure = 1.0;
+            }
+        }
+        else {
+            pressure = 1.0;
+        }
+        pageXYhandler = event.touches[0];
+    }
+    else {
+        pressure = 1.0;
+        pageXYhandler = event;
+    }
+    if (selectedDrawmode == "free") {
+        x = pageXYhandler.pageX - g_canvas.offsetLeft;
+        y = pageXYhandler.pageY - g_canvas.offsetTop;
+    }
+    else if (selectedDrawmode == "horizontal") {
+        x = pageXYhandler.pageX - g_canvas.offsetLeft;
+        y = g_startPoint.y;
+    }
+    else if (selectedDrawmode == "vertical") {
+        x = g_startPoint.x;
+        y = pageXYhandler.pageY - g_canvas.offsetTop;
+    }
+    else if (selectedDrawmode == "rising") {
+        x = pageXYhandler.pageX - g_canvas.offsetLeft;
+        y = g_startPoint.y - (x - g_startPoint.x);
+    }
+    else if (selectedDrawmode == "falling") {
+        x = pageXYhandler.pageX - g_canvas.offsetLeft;
+        y = g_startPoint.y + (x - g_startPoint.x);
+    }
+    var selectedColor = document.forms.namedItem("colorRadios").color.value;
+    var selectedLineWidth = document.forms.namedItem("widthRadios").width.value;
+    var resultingLineWidth = Math.log(pressure + 1);
+    if (selectedLineWidth == "thin") {
+        resultingLineWidth *= 5.0;
+    }
+    else if (selectedLineWidth == "medium") {
+        resultingLineWidth *= 10.0;
+    }
+    else if (selectedLineWidth == "thick") {
+        resultingLineWidth *= 100.0;
+    }
+    var newPoint = new Point(x, y, resultingLineWidth, selectedColor, visibleLineToIt);
+    g_points.push(newPoint);
+    g_pointsHistory.push(newPoint);
+    if (setStartPoint) {
+        g_startPoint = newPoint;
+    }
+    drawPointsOnCanvas(g_points);
 }
 for (var _i = 0, _a = ["touchstart", "mousedown"]; _i < _a.length; _i++) {
-    var ev = _a[_i];
-    canvas.addEventListener(ev, function (e) {
-        var pressure = 0.1;
-        var x, y;
-        if (e.touches && e.touches[0] && typeof e.touches[0]["force"] !== "undefined") {
-            if (e.touches[0]["force"] > 0) {
-                pressure = e.touches[0]["force"];
-            }
-            x = e.touches[0].pageX * 2;
-            y = e.touches[0].pageY * 2;
+    var events = _a[_i];
+    g_canvas.addEventListener(events, function (event) {
+        if (!g_isLocked) {
+            g_isMousedown = true;
+            g_points = [];
+            addPoint(event, false, true);
         }
-        else {
-            pressure = 1.0;
-            x = e.pageX * 2;
-            y = e.pageY * 2;
-        }
-        isMousedown = true;
-        lineWidth = Math.log(pressure + 1) * 40;
-        context.lineWidth = lineWidth; // pressure * 50;
-        points.push({ x: x, y: y, lineWidth: lineWidth });
-        drawOnCanvas(points);
     });
 }
-for (var _b = 0, _c = ['touchmove', 'mousemove']; _b < _c.length; _b++) {
-    var ev = _c[_b];
-    canvas.addEventListener(ev, function (e) {
-        if (!isMousedown)
-            return;
-        e.preventDefault();
-        var pressure = 0.1;
-        var x, y;
-        if (e.touches && e.touches[0] && typeof e.touches[0]["force"] !== "undefined") {
-            if (e.touches[0]["force"] > 0) {
-                pressure = e.touches[0]["force"];
+for (var _b = 0, _c = ["touchmove", "mousemove"]; _b < _c.length; _b++) {
+    var events = _c[_b];
+    g_canvas.addEventListener(events, function (event) {
+        if (!g_isLocked) {
+            if (!g_isMousedown) {
+                return;
             }
-            x = e.touches[0].pageX * 2;
-            y = e.touches[0].pageY * 2;
+            event.preventDefault();
+            addPoint(event, true, false);
         }
-        else {
-            pressure = 1.0;
-            x = e.pageX * 2;
-            y = e.pageY * 2;
-        }
-        // smoothen line width
-        lineWidth = (Math.log(pressure + 1) * 40 * 0.2 + lineWidth * 0.8);
-        points.push({ x: x, y: y, lineWidth: lineWidth });
-        drawOnCanvas(points);
     });
 }
-for (var _d = 0, _e = ['touchend', 'touchleave', 'mouseup']; _d < _e.length; _d++) {
-    var ev = _e[_d];
-    canvas.addEventListener(ev, function (e) {
-        var pressure = 0.1;
-        var x, y;
-        if (e.touches && e.touches[0] && typeof e.touches[0]["force"] !== "undefined") {
-            if (e.touches[0]["force"] > 0) {
-                pressure = e.touches[0]["force"];
-            }
-            x = e.touches[0].pageX * 2;
-            y = e.touches[0].pageY * 2;
+for (var _d = 0, _e = ["touchend", "touchleave", "mouseup"]; _d < _e.length; _d++) {
+    var events = _e[_d];
+    g_canvas.addEventListener(events, function (event) {
+        if (!g_isLocked) {
+            g_isMousedown = false;
+            // addPoints does not work correctly here as a very
+            // high pressure is detected with these events.
         }
-        else {
-            pressure = 1.0;
-            x = e.pageX * 2;
-            y = e.pageY * 2;
-        }
-        isMousedown = false;
-        strokeHistory.push(__spreadArray([], points));
-        points = [];
-        lineWidth = 0;
     });
 }
-;
-////CANVAS TEST END
+function lock_canvas() {
+    g_isLocked = !g_isLocked;
+}
+////g_canvas TEST END

@@ -30,8 +30,11 @@ pip install simple-websocket
 # your local network is marked as a private network.
 ```
 
-The canvas element logic is taken and adapted from:<br>
+## Acknowledgements
+
+The canvas element logic was heavily adapted and modified from:<br>
 https://github.com/shuding/apple-pencil-safari-api-test
 
 ## Future ideas
+
 * HTTPS integration protocol?
