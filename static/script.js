@@ -1,4 +1,7 @@
 var socket = io()
+// ...THIS LINE (END OF LINES WHICH MUST NOT BE CHANGED)
+// The reason for why this is done: Otherwise, run.py's transformation
+// for a working static import wouldn't work correctly
 socket.on('connect', function () {
     alert("B");
 });

@@ -31,4 +31,9 @@ def handle_custom_event_5(string):
 
 
 if __name__ == '__main__':
-    socketio.run(app)
+    # We use the address 0.0.0.0 in order to propagate
+    # the server in our local network. If you only want
+    # to use the server on your hosting device only, use
+    # the address 127.0.0.1.
+    # The default port number is 5000.
+    socketio.run(app, host="0.0.0.0", port=5000)

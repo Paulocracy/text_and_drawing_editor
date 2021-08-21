@@ -22,6 +22,12 @@ pip install simple-websocket
 ./run.bat
 # ...or (on Linux) with...
 ./run.sh
+# Optional further test: Check if you can access
+# the server from other devices in your local network.
+# If this is not the case, you have to allow the basic_server
+# conda enivronment's Python binary to go through your
+# system's firewall for private networks. Make sure that
+# your local network is marked as a private network.
 ```
 
 ## Future ideas
