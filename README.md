@@ -32,7 +32,7 @@ pip install simple-websocket
 
 ## Acknowledgements
 
-The canvas element logic was heavily adapted and modified from:<br>
+The canvas element logic was initially inspired (and is now nearly completely changed) by:<br>
 https://github.com/shuding/apple-pencil-safari-api-test
 
 ## Future ideas

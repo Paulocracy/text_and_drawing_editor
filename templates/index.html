@@ -30,14 +30,13 @@
     <label for="locked">Locked?</label>
 
     <form name="canvasSize" method="dialog">
-        <label for="canvasWidth">X:</label>
-        <input type="text" name="canvasWidth" id="canvasWidth" value="500" size="3" required>
-        <label for="canvasHeight">Y:</label>
-        <input type="text" name="canvasHeight" id="canvasHeight" value="500" size="3" required>
-        <button id="buttonResize" onclick="resizeCanvas()">X</button>
+        <label for="canvasWidth">Width:</label>
+        <input type="text" name="canvasWidth" id="canvasWidth" value="500" size="2" required>
+        <label for="canvasHeight">Height:</label>
+        <input type="text" name="canvasHeight" id="canvasHeight" value="500" size="2" required>
+        <button id="buttonResize" onclick="resizeCanvas()">Resize</button>
     </form>
 
-    AAA
     <form name="colorRadios">
         <input type="radio" id="radioBlack" name="color" value="black" checked><label for="radioBlack">Black</label>
         <input type="radio" id="radioWhite" name="color" value="white"><label for="radioWhite">White</label>
@@ -54,21 +53,13 @@
     <form name="drawmodeRadios">
         <input type="radio" id="radioFree" name="drawmode" value="free" checked><label for="radioFree">Free</label>
         <input type="radio" id="radioHorizontal" name="drawmode" value="horizontal"><label for="radioHorizontal">Horizontal</label>
+        <input type="radio" id="radioVertical" name="drawmode" value="vertical"><label for="radioVertical">Vertical</label>
         <input type="radio" id="radioRising" name="drawmode" value="rising"><label for="radioRising">Rising</label>
         <input type="radio" id="radioFalling" name="drawmode" value="falling"><label for="radioFalling">Falling</label>
     </form>
     <canvas id="canvas" style="border: 1px solid black;">
         Unfortunately, your browser does not support canvas elements.
     </canvas>
-    AAA<br>
-    AAA<br>
-    AAA<br>
-    AAA<br>
-    AAA<br>
-    AAA<br>
-    AAA<br>
-    AAA<br>
-    AAA<br>
     <!--CANVAS TEST END-->
 
     <!--JavaScript loading section-->
