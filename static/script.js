@@ -186,4 +186,206 @@ for (var _d = 0, _e = ["touchend", "touchleave", "mouseup"]; _d < _e.length; _d+
 function lock_canvas() {
     g_isLocked = !g_isLocked;
 }
+function documentAddButton(id, onclick, text) {
+    var button = document.createElement("button");
+    button.id = id;
+    button.onclick = onclick;
+    button.textContent = text;
+    return button;
+}
+function documentAddForm(id, method) {
+    var form = document.createElement("form");
+    form.name = id;
+    form.method = method;
+    return form;
+}
+function documentAddDiv(id) {
+    var div = document.createElement("div");
+    div.id = id;
+    return div;
+}
+function documentAddLabel(htmlFor, text) {
+    var label = document.createElement("label");
+    label.htmlFor = htmlFor;
+    label.innerText = text;
+    return label;
+}
+function documentAddTextlineInput(id, value, size) {
+    var input = document.createElement("input");
+    input.type = "text";
+    input.value = value;
+    input.size = 2;
+    input.id = id;
+    input.name = id;
+    input.required = true;
+    return input;
+}
+function documentAddRadioInput(id, name, value, checked) {
+    var input = document.createElement("input");
+    input.type = "radio";
+    input.id = id;
+    input.name = name;
+    input.checked = checked;
+    return input;
+}
+function documentAddCheckboxInput(id, name, onclick) {
+    var input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = id;
+    input.name = name;
+    input.onclick = onclick;
+    return input;
+}
+////////
+var g_widgets = [
+    {
+        id: "ABCDE",
+        data: {
+            pointsHistory: [],
+            isLocked: false,
+            isWithPressure: false
+        }
+    },
+];
+function canvasClear(id) { }
+function canvasMove(id, x, y) { }
+function canvasResize(id) { }
+function canvasLock(id) { }
+function renderCanvasDiv(widget) {
+    var id = widget.id;
+    var data = widget.classdata;
+    var div = documentAddDiv("canvas" + id);
+    // Canvas movement form
+    var moveForm = documentAddForm("canvasMovement" + id, "dialog");
+    var clearButton = documentAddButton("buttonClear" + id, function () { canvasClear(id); }, "Clear");
+    moveForm.appendChild(clearButton);
+    var leftButton = documentAddButton("buttonMoveLeft" + id, function () { canvasMove(id, -3, 0); }, "Move left");
+    moveForm.appendChild(leftButton);
+    var rightButton = documentAddButton("buttonMoveRight" + id, function () { canvasMove(id, 3, 0); }, "Move left");
+    moveForm.appendChild(rightButton);
+    var downButton = documentAddButton("buttonMoveDown" + id, function () { canvasMove(id, 0, 3); }, "Move left");
+    moveForm.appendChild(downButton);
+    div.appendChild(moveForm);
+    // Canvas size form
+    var sizeForm = documentAddForm("canvasSize" + id, "dialog");
+    var widthLabel = documentAddLabel("canvasWidth" + id, "Width: ");
+    var widthInput = documentAddTextlineInput("canvasWidth" + id, "500", "2");
+    sizeForm.appendChild(widthLabel);
+    sizeForm.appendChild(widthInput);
+    var heightLabel = documentAddLabel("canvasHeight" + id, "Height: ");
+    var heightInput = documentAddTextlineInput("canvasHeight" + id, "500", "2");
+    sizeForm.appendChild(heightLabel);
+    sizeForm.appendChild(heightInput);
+    var resizeButton = documentAddButton("buttonResize" + id, function () { canvasResize(id); }, "Resize");
+    sizeForm.appendChild(resizeButton);
+    div.appendChild(sizeForm);
+    // Canvas color form
+    var colorForm = documentAddForm("canvasColor" + id, "dialog");
+    var radioBlack = documentAddRadioInput("radioBlack" + id, "color", "black", true);
+    var labelBlack = documentAddLabel("radioBlack" + id, "Black");
+    colorForm.appendChild(radioBlack);
+    colorForm.appendChild(labelBlack);
+    var radioWhite = documentAddRadioInput("radioWhite" + id, "color", "white", false);
+    var labelWhite = documentAddLabel("radioWhite" + id, "White");
+    colorForm.appendChild(radioWhite);
+    colorForm.appendChild(labelWhite);
+    var radioRed = documentAddRadioInput("radioRed" + id, "color", "red", false);
+    var labelRed = documentAddLabel("radioRed" + id, "Red");
+    colorForm.appendChild(radioRed);
+    colorForm.appendChild(labelRed);
+    var radioBlue = documentAddRadioInput("radioBlue" + id, "color", "blue", false);
+    var labelBlue = documentAddLabel("radioBlue" + id, "Blue");
+    colorForm.appendChild(radioBlue);
+    colorForm.appendChild(labelBlue);
+    var radioGreen = documentAddRadioInput("radioGreen" + id, "color", "green", false);
+    var labelGreen = documentAddLabel("radioGreen" + id, "Green");
+    colorForm.appendChild(radioGreen);
+    colorForm.appendChild(labelGreen);
+    var radioYellow = documentAddRadioInput("radioYellow" + id, "color", "yellow", false);
+    var labelYellow = documentAddLabel("radioYellow" + id, "Yellow");
+    colorForm.appendChild(radioYellow);
+    colorForm.appendChild(labelYellow);
+    div.appendChild(colorForm);
+    // Pencil width form
+    var widthForm = documentAddForm("canvasWidth" + id, "dialog");
+    var radioThin = documentAddRadioInput("radioThin" + id, "width", "thin", true);
+    var labelThin = documentAddLabel("labelThin" + id, "Thin");
+    widthForm.appendChild(radioThin);
+    widthForm.appendChild(labelThin);
+    var radioMedium = documentAddRadioInput("radioMedium" + id, "width", "medium", false);
+    var labelMedium = documentAddLabel("labelThin" + id, "Medium");
+    widthForm.appendChild(radioMedium);
+    widthForm.appendChild(labelMedium);
+    var radioThick = documentAddRadioInput("radioThick" + id, "width", "thick", false);
+    var labelThick = documentAddLabel("labelThin" + id, "Thick");
+    widthForm.appendChild(radioThick);
+    widthForm.appendChild(labelThick);
+    var checkboxPressure = documentAddCheckboxInput("boxPressure" + id, "pressure", function () { });
+    var labelPressure = documentAddLabel("boxPressure" + id, "Pressure?");
+    widthForm.appendChild(checkboxPressure);
+    widthForm.appendChild(labelPressure);
+    var checkboxLocked = documentAddCheckboxInput("boxLocked" + id, "locked", function () { canvasLock(id); });
+    var labelLocked = documentAddLabel("boxLocked" + id, "Locked?");
+    widthForm.appendChild(checkboxLocked);
+    widthForm.appendChild(labelLocked);
+    div.appendChild(widthForm);
+    // Drawmode form
+    var drawmodeForm = documentAddForm("drawmodeRadios" + id, "dialog");
+    var radioFree = documentAddRadioInput("radioFree" + id, "drawmode", "free", true);
+    var labelFree = documentAddLabel("radioFree" + id, "Free");
+    drawmodeForm.appendChild(radioFree);
+    drawmodeForm.appendChild(labelFree);
+    var radioHorizontal = documentAddRadioInput("radioHorizontal" + id, "drawmode", "horizontal", false);
+    var labelHorizontal = documentAddLabel("radioHorizontal" + id, "Horizontal");
+    drawmodeForm.appendChild(radioHorizontal);
+    drawmodeForm.appendChild(labelHorizontal);
+    var radioVertical = documentAddRadioInput("radioVertical" + id, "drawmode", "vertical", false);
+    var labelVertical = documentAddLabel("radioVertical" + id, "Vertical");
+    drawmodeForm.appendChild(radioVertical);
+    drawmodeForm.appendChild(labelVertical);
+    var radioRising = documentAddRadioInput("radioRising" + id, "drawmode", "rising", false);
+    var labelRising = documentAddLabel("radioRising" + id, "Rising");
+    drawmodeForm.appendChild(radioRising);
+    drawmodeForm.appendChild(labelRising);
+    var radioFalling = documentAddRadioInput("radioFalling" + id, "drawmode", "falling", false);
+    var labelFalling = documentAddLabel("radioFalling" + id, "Falling");
+    drawmodeForm.appendChild(radioFalling);
+    drawmodeForm.appendChild(labelFalling);
+    div.appendChild(drawmodeForm);
+    // The actual canvas
+    var canvas = document.createElement("canvas");
+    canvas.id = id;
+    canvas.width = 500;
+    canvas.height = 500;
+    canvas.style.border = "1px solid black";
+    canvas.textContent = "Unfortunately, your browser does not support canvas elements.";
+    div.appendChild(canvas);
+    document.body.appendChild(div);
+}
+renderCanvasDiv(g_widgets[0]);
+function renderWidgets(widgets) {
+    while (document.firstChild) {
+        document.removeChild(document.firstChild);
+    }
+    // renderMenuDiv()
+    var position = 0;
+    for (var _i = 0, widgets_1 = widgets; _i < widgets_1.length; _i++) {
+        var widget = widgets_1[_i];
+        if (widget.type == "canvas") {
+            renderCanvasDiv(widget);
+        }
+        else if (widget.type == "text") {
+            // renderTextDiv(widget)
+        }
+        // renderButtonsDiv(position)
+        position++;
+    }
+}
+[
+    {
+        id: "asdsad",
+        type: "canvas",
+        classdata: {}
+    }
+];
 ////g_canvas TEST END

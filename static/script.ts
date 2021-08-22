@@ -212,23 +212,240 @@ for (const events of ["touchend", "touchleave", "mouseup"]) {
 function lock_canvas() {
     g_isLocked = !g_isLocked
 }
-/*
-function renderCanvas(widget: any) {
+
+function documentAddButton(id: string, onclick: any, text: string) {
+    let button = document.createElement("button")
+    button.id = id
+    button.onclick = onclick
+    button.textContent = text
+    return button
+}
+
+function documentAddForm(id: string, method: HTMLFormElement['method']) {
+    let form = document.createElement("form")
+    form.name = id
+    form.method = method
+    return form
+}
+
+function documentAddDiv(id: string) {
+    let div = document.createElement("div")
+    div.id = id
+    return div
+}
+
+
+function documentAddLabel(htmlFor: string, text: string) {
+    let label = document.createElement("label")
+    label.htmlFor = htmlFor
+    label.innerText = text
+    return label
+}
+
+function documentAddTextlineInput(id: string, value: string, size: string) {
+    let input = document.createElement("input")
+    input.type = "text"
+    input.value = value
+    input.size = 2
+    input.id = id
+    input.name = id
+    input.required = true
+    return input
+}
+
+function documentAddRadioInput(id: string, name: string, value: string, checked: boolean) {
+    let input = document.createElement("input")
+    input.type = "radio"
+    input.id = id
+    input.name = name
+    input.checked = checked
+    return input
+}
+
+function documentAddCheckboxInput(id: string, name: string, onclick: any) {
+    let input = document.createElement("input")
+    input.type = "checkbox"
+    input.id = id
+    input.name = name
+    input.onclick = onclick
+    return input
+}
+
+////////
+var g_widgets = [
+    {
+        id: "ABCDE",
+        data: {
+            pointsHistory: [],
+            isLocked: false,
+            isWithPressure: false,
+        },
+    },
+];
+
+function canvasClear(id: string) {}
+function canvasMove(id: string, x: number, y: number) {}
+function canvasResize(id: string) {}
+function canvasLock(id: string) {}
+
+function renderCanvasDiv(widget: any) {
     let id = widget.id
     let data = widget.classdata
 
+    let div = documentAddDiv("canvas"+id)
 
+    // Canvas movement form
+    let moveForm = documentAddForm("canvasMovement"+id, "dialog")
+    const clearButton = documentAddButton(
+        "buttonClear"+id,
+        function() { canvasClear(id) },
+        "Clear"
+    )
+    moveForm.appendChild(clearButton)
+    const leftButton = documentAddButton(
+        "buttonMoveLeft"+id,
+        function() { canvasMove(id, -3, 0) },
+        "Move left"
+    )
+    moveForm.appendChild(leftButton)
+    const rightButton = documentAddButton(
+        "buttonMoveRight"+id,
+        function() { canvasMove(id, 3, 0) },
+        "Move left"
+    )
+    moveForm.appendChild(rightButton)
+    const downButton = documentAddButton(
+        "buttonMoveDown"+id,
+        function() { canvasMove(id, 0, 3) },
+        "Move left"
+    )
+    moveForm.appendChild(downButton)
+    div.appendChild(moveForm)
+
+    // Canvas size form
+    let sizeForm = documentAddForm("canvasSize"+id, "dialog")
+    const widthLabel = documentAddLabel("canvasWidth"+id, "Width: ")
+    const widthInput = documentAddTextlineInput("canvasWidth"+id, "500", "2")
+    sizeForm.appendChild(widthLabel)
+    sizeForm.appendChild(widthInput)
+    const heightLabel = documentAddLabel("canvasHeight"+id, "Height: ")
+    const heightInput = documentAddTextlineInput("canvasHeight"+id, "500", "2")
+    sizeForm.appendChild(heightLabel)
+    sizeForm.appendChild(heightInput)
+    const resizeButton = documentAddButton(
+        "buttonResize"+id,
+        function () { canvasResize(id) },
+        "Resize"
+    )
+    sizeForm.appendChild(resizeButton)
+    div.appendChild(sizeForm)
+
+    // Canvas color form
+    let colorForm = documentAddForm("canvasColor"+id, "dialog")
+    const radioBlack = documentAddRadioInput("radioBlack"+id, "color", "black", true)
+    const labelBlack = documentAddLabel("radioBlack"+id, "Black")
+    colorForm.appendChild(radioBlack)
+    colorForm.appendChild(labelBlack)
+    const radioWhite = documentAddRadioInput("radioWhite"+id, "color", "white", false)
+    const labelWhite = documentAddLabel("radioWhite"+id, "White")
+    colorForm.appendChild(radioWhite)
+    colorForm.appendChild(labelWhite)
+    const radioRed = documentAddRadioInput("radioRed"+id, "color", "red", false)
+    const labelRed = documentAddLabel("radioRed"+id, "Red")
+    colorForm.appendChild(radioRed)
+    colorForm.appendChild(labelRed)
+    const radioBlue = documentAddRadioInput("radioBlue"+id, "color", "blue", false)
+    const labelBlue = documentAddLabel("radioBlue"+id, "Blue")
+    colorForm.appendChild(radioBlue)
+    colorForm.appendChild(labelBlue)
+    const radioGreen = documentAddRadioInput("radioGreen"+id, "color", "green", false)
+    const labelGreen = documentAddLabel("radioGreen"+id, "Green")
+    colorForm.appendChild(radioGreen)
+    colorForm.appendChild(labelGreen)
+    const radioYellow = documentAddRadioInput("radioYellow"+id, "color", "yellow", false)
+    const labelYellow = documentAddLabel("radioYellow"+id, "Yellow")
+    colorForm.appendChild(radioYellow)
+    colorForm.appendChild(labelYellow)
+    div.appendChild(colorForm)
+
+    // Pencil width form
+    let widthForm = documentAddForm("canvasWidth"+id, "dialog")
+    const radioThin = documentAddRadioInput("radioThin"+id, "width", "thin", true)
+    const labelThin = documentAddLabel("labelThin"+id, "Thin")
+    widthForm.appendChild(radioThin)
+    widthForm.appendChild(labelThin)
+    const radioMedium = documentAddRadioInput("radioMedium"+id, "width", "medium", false)
+    const labelMedium = documentAddLabel("labelThin"+id, "Medium")
+    widthForm.appendChild(radioMedium)
+    widthForm.appendChild(labelMedium)
+    const radioThick = documentAddRadioInput("radioThick"+id, "width", "thick", false)
+    const labelThick = documentAddLabel("labelThin"+id, "Thick")
+    widthForm.appendChild(radioThick)
+    widthForm.appendChild(labelThick)
+    const checkboxPressure = documentAddCheckboxInput("boxPressure"+id, "pressure", function() {})
+    const labelPressure = documentAddLabel("boxPressure"+id, "Pressure?")
+    widthForm.appendChild(checkboxPressure)
+    widthForm.appendChild(labelPressure)
+    const checkboxLocked = documentAddCheckboxInput("boxLocked"+id, "locked", function() { canvasLock(id) })
+    const labelLocked = documentAddLabel("boxLocked"+id, "Locked?")
+    widthForm.appendChild(checkboxLocked)
+    widthForm.appendChild(labelLocked)
+    div.appendChild(widthForm)
+
+    // Drawmode form
+    let drawmodeForm = documentAddForm("drawmodeRadios"+id, "dialog")
+    const radioFree = documentAddRadioInput("radioFree"+id, "drawmode", "free", true)
+    const labelFree = documentAddLabel("radioFree"+id, "Free")
+    drawmodeForm.appendChild(radioFree)
+    drawmodeForm.appendChild(labelFree)
+    const radioHorizontal = documentAddRadioInput("radioHorizontal"+id, "drawmode", "horizontal", false)
+    const labelHorizontal = documentAddLabel("radioHorizontal"+id, "Horizontal")
+    drawmodeForm.appendChild(radioHorizontal)
+    drawmodeForm.appendChild(labelHorizontal)
+    const radioVertical = documentAddRadioInput("radioVertical"+id, "drawmode", "vertical", false)
+    const labelVertical = documentAddLabel("radioVertical"+id, "Vertical")
+    drawmodeForm.appendChild(radioVertical)
+    drawmodeForm.appendChild(labelVertical)
+    const radioRising = documentAddRadioInput("radioRising"+id, "drawmode", "rising", false)
+    const labelRising = documentAddLabel("radioRising"+id, "Rising")
+    drawmodeForm.appendChild(radioRising)
+    drawmodeForm.appendChild(labelRising)
+    const radioFalling = documentAddRadioInput("radioFalling"+id, "drawmode", "falling", false)
+    const labelFalling = documentAddLabel("radioFalling"+id, "Falling")
+    drawmodeForm.appendChild(radioFalling)
+    drawmodeForm.appendChild(labelFalling)
+    div.appendChild(drawmodeForm)
+
+    // The actual canvas
+    let canvas = document.createElement("canvas")
+    canvas.id = id
+    canvas.width = 500
+    canvas.height = 500
+    canvas.style.border = "1px solid black"
+    canvas.textContent = "Unfortunately, your browser does not support canvas elements."
+    div.appendChild(canvas)
+
+    document.body.appendChild(div)
 }
 
+
+renderCanvasDiv(g_widgets[0])
+
 function renderWidgets(widgets: any[]) {
+    while (document.firstChild) {
+        document.removeChild(document.firstChild)
+    }
+
+    // renderMenuDiv()
+
     let position = 0
     for (let widget of widgets) {
         if (widget.type == "canvas") {
-            renderCanvas(widget)
+            renderCanvasDiv(widget)
         } else if (widget.type == "text") {
-            renderText(widget)
+            // renderTextDiv(widget)
         }
-        renderButtons(position)
+        // renderButtonsDiv(position)
         position++
     }
 }
@@ -240,5 +457,4 @@ function renderWidgets(widgets: any[]) {
         classdata: {}
     }
 ]
-*/
 ////g_canvas TEST END
