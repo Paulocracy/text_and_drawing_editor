@@ -14,53 +14,7 @@
 </head>
 <body>
     <!--HTML divs section-->
-    <button id="button1" onclick="button_function()">Click for WebSocket test</button><br>
-
-    <!--CANVAS TEST BEGIN-->
-    <form name="canvasMovement" method="dialog">
-        <button id="button2" onclick="clear_canvas()">Clear</button>
-        <button id="button2" onclick="moveAll(-3, 0)">Move left</button>
-        <button id="button2" onclick="moveAll(3, 0)">Move right</button>
-        <button id="button2" onclick="moveAll(0, -3)">Move up</button>
-        <button id="button2" onclick="moveAll(0, 3)">Move down</button>
-    </form>
-
-    <form name="canvasSize" method="dialog">
-        <label for="canvasWidth">Width:</label>
-        <input type="text" name="canvasWidth" id="canvasWidth" value="500" size="2" required>
-        <label for="canvasHeight">Height:</label>
-        <input type="text" name="canvasHeight" id="canvasHeight" value="500" size="2" required>
-        <button id="buttonResize" onclick="resizeCanvas()">Resize</button>
-    </form>
-
-    <form name="colorRadios">
-        <input type="radio" id="radioBlack" name="color" value="black" checked><label for="radioBlack">Black</label>
-        <input type="radio" id="radioWhite" name="color" value="white"><label for="radioWhite">White</label>
-        <input type="radio" id="radioRed" name="color" value="red"><label for="radioRed">Red</label>
-        <input type="radio" id="radioBlue" name="color" value="blue"><label for="radioBlue">Blue</label>
-        <input type="radio" id="radioGreen" name="color" value="green"><label for="radioGreen">Green</label>
-        <input type="radio" id="radioYellow" name="color" value="yellow"><label for="radioYellow">Yellow</label>
-    </form>
-    <form name="widthRadios">
-        <input type="radio" id="radioThin" name="width" value="thin" checked><label for="radioThin">Thin</label>
-        <input type="radio" id="radioMedium" name="width" value="medium"><label for="radioMedium">Medium</label>
-        <input type="radio" id="radioThick" name="width" value="thick"><label for="radioThick">Thick</label>
-        <input type="checkbox" id="pressure" name="pressure">
-        <label for="pressure">Pressure?</label>
-        <input type="checkbox" id="locked" name="locked" onclick="lock_canvas()">
-        <label for="locked">Locked?</label>
-    </form>
-    <form name="drawmodeRadios">
-        <input type="radio" id="radioFree" name="drawmode" value="free" checked><label for="radioFree">Free</label>
-        <input type="radio" id="radioHorizontal" name="drawmode" value="horizontal"><label for="radioHorizontal">Horizontal</label>
-        <input type="radio" id="radioVertical" name="drawmode" value="vertical"><label for="radioVertical">Vertical</label>
-        <input type="radio" id="radioRising" name="drawmode" value="rising"><label for="radioRising">Rising</label>
-        <input type="radio" id="radioFalling" name="drawmode" value="falling"><label for="radioFalling">Falling</label>
-    </form>
-    <canvas id="canvas" style="border: 1px solid black;">
-        Unfortunately, your browser does not support canvas elements.
-    </canvas>
-    <!--CANVAS TEST END-->
+    <button id="button1" onclick="button_function()">Click for WebSocket test</button><br><br>
 
     <!--JavaScript loading section-->
     <script src="{{url_for('static', filename='socket.io.js')}}"></script>
