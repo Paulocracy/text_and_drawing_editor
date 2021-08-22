@@ -17,17 +17,13 @@
     <button id="button1" onclick="button_function()">Click for WebSocket test</button><br>
 
     <!--CANVAS TEST BEGIN-->
-    <button id="button2" onclick="clear_canvas()">Clear</button>
-    <button id="button2" onclick="moveAll(-3, 0)">Move all left</button>
-    <button id="button2" onclick="moveAll(3, 0)">Move all right</button>
-    <button id="button2" onclick="moveAll(0, -3)">Move all up</button>
-    <button id="button2" onclick="moveAll(0, 3)">Move all down</button>
-
-    <input type="checkbox" id="pressure" name="pressure">
-    <label for="pressure">Pressure?</label>
-
-    <input type="checkbox" id="locked" name="locked" onclick="lock_canvas()">
-    <label for="locked">Locked?</label>
+    <form name="canvasMovement" method="dialog">
+        <button id="button2" onclick="clear_canvas()">Clear</button>
+        <button id="button2" onclick="moveAll(-3, 0)">Move left</button>
+        <button id="button2" onclick="moveAll(3, 0)">Move right</button>
+        <button id="button2" onclick="moveAll(0, -3)">Move up</button>
+        <button id="button2" onclick="moveAll(0, 3)">Move down</button>
+    </form>
 
     <form name="canvasSize" method="dialog">
         <label for="canvasWidth">Width:</label>
@@ -49,6 +45,10 @@
         <input type="radio" id="radioThin" name="width" value="thin" checked><label for="radioThin">Thin</label>
         <input type="radio" id="radioMedium" name="width" value="medium"><label for="radioMedium">Medium</label>
         <input type="radio" id="radioThick" name="width" value="thick"><label for="radioThick">Thick</label>
+        <input type="checkbox" id="pressure" name="pressure">
+        <label for="pressure">Pressure?</label>
+        <input type="checkbox" id="locked" name="locked" onclick="lock_canvas()">
+        <label for="locked">Locked?</label>
     </form>
     <form name="drawmodeRadios">
         <input type="radio" id="radioFree" name="drawmode" value="free" checked><label for="radioFree">Free</label>

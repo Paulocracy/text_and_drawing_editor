@@ -212,5 +212,33 @@ for (const events of ["touchend", "touchleave", "mouseup"]) {
 function lock_canvas() {
     g_isLocked = !g_isLocked
 }
+/*
+function renderCanvas(widget: any) {
+    let id = widget.id
+    let data = widget.classdata
 
+
+}
+
+function renderWidgets(widgets: any[]) {
+    let position = 0
+    for (let widget of widgets) {
+        if (widget.type == "canvas") {
+            renderCanvas(widget)
+        } else if (widget.type == "text") {
+            renderText(widget)
+        }
+        renderButtons(position)
+        position++
+    }
+}
+
+[
+    {
+        id: "asdsad",
+        type: "canvas",
+        classdata: {}
+    }
+]
+*/
 ////g_canvas TEST END
