@@ -250,6 +250,16 @@ function canvasClear(id) {
     var index = getWidgetIndexById(id);
     gWidgets[index].data.pointsHistory = [];
 }
+/**
+ * Draws the given list of Point[] on the canvas with the
+ * given ID. Each Point instance has all settings (such as
+ * color, thickness) that are important for its drawing.
+ * Note: The canvas is not cleared when this function is called.
+ *
+ * @param id The canvas's ID
+ * @param points The list of Point instances which shall
+ * be drawn
+ */
 function canvasDrawPointsOnIt(id, points) {
     var canvas = document.getElementById("canvas" + id);
     var context = canvas.getContext("2d");
@@ -271,6 +281,13 @@ function canvasDrawPointsOnIt(id, points) {
         gPoints.pop();
     }
 }
+/**
+ * Switches (from true to false or from false to true) the "isLocked"
+ * value of the canvas wiht the given ID. If "isLocked" is true, it's
+ * not possible to draw on the canvas.
+ *
+ * @param id The canvas's id (without "canvas" at beginning)
+ */
 function canvasLock(id) {
     var index = getWidgetIndexById(id);
     gWidgets[index].data.isLocked = !gWidgets[index].data.isLocked;
@@ -358,15 +375,15 @@ function renderCanvasDiv(widget) {
     // Pencil width form
     var widthForm = documentAddForm("canvasWidth" + id, "dialog");
     var radioThin = documentAddRadioInput("radioThin" + id, "width", "thin", true);
-    var labelThin = documentAddLabel("labelThin" + id, "Thin");
+    var labelThin = documentAddLabel("radioThin" + id, "Thin");
     widthForm.appendChild(radioThin);
     widthForm.appendChild(labelThin);
     var radioMedium = documentAddRadioInput("radioMedium" + id, "width", "medium", false);
-    var labelMedium = documentAddLabel("labelThin" + id, "Medium");
+    var labelMedium = documentAddLabel("radioMedium" + id, "Medium");
     widthForm.appendChild(radioMedium);
     widthForm.appendChild(labelMedium);
     var radioThick = documentAddRadioInput("radioThick" + id, "width", "thick", false);
-    var labelThick = documentAddLabel("labelThin" + id, "Thick");
+    var labelThick = documentAddLabel("radioThick" + id, "Thick");
     widthForm.appendChild(radioThick);
     widthForm.appendChild(labelThick);
     var checkboxPressure = documentAddCheckboxInput("boxPressure" + id, "pressure", widget.isLocked, function () { });
