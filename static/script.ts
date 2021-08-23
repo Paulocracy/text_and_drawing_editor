@@ -162,11 +162,12 @@ function documentAddLabel(htmlFor: string, text: string) {
     return label
 }
 
-function documentAddCheckboxInput(id: string, name: string, onclick: any) {
+function documentAddCheckboxInput(id: string, name: string, isChecked: boolean, onclick: any) {
     let input = document.createElement("input")
     input.type = "checkbox"
     input.id = id
     input.name = name
+    input.checked = isChecked
     input.onclick = onclick
     return input
 }
@@ -431,11 +432,11 @@ function renderCanvasDiv(widget: any) {
     const labelThick = documentAddLabel("labelThin"+id, "Thick")
     widthForm.appendChild(radioThick)
     widthForm.appendChild(labelThick)
-    const checkboxPressure = documentAddCheckboxInput("boxPressure"+id, "pressure", function() {})
+    const checkboxPressure = documentAddCheckboxInput("boxPressure"+id, "pressure", widget.isLocked, function() {})
     const labelPressure = documentAddLabel("boxPressure"+id, "Pressure?")
     widthForm.appendChild(checkboxPressure)
     widthForm.appendChild(labelPressure)
-    const checkboxLocked = documentAddCheckboxInput("boxLocked"+id, "locked", function() { canvasLock(id) })
+    const checkboxLocked = documentAddCheckboxInput("boxLocked"+id, "locked", widget.isWithPressure, function() { canvasLock(id) })
     const labelLocked = documentAddLabel("boxLocked"+id, "Locked?")
     widthForm.appendChild(checkboxLocked)
     widthForm.appendChild(labelLocked)
@@ -475,43 +476,45 @@ function renderCanvasDiv(widget: any) {
 
     for (const events of ["touchstart", "mousedown"]) {
         canvas.addEventListener(events, function (event: any) {
-          const index = getWidgetIndexById(id)
+            const index = getWidgetIndexById(id)
 
-          if (!gWidgets[index].data.isLocked) {
-              gIsMouseDown = true
-              gPoints = []
-              canvasAddPoint(event, id, false, true)
-          }
+            if (!gWidgets[index].data.isLocked) {
+                gIsMouseDown = true
+                gPoints = []
+                canvasAddPoint(event, id, false, true)
+            }
         })
-      }
+    }
 
-      for (const events of ["touchmove", "mousemove"]) {
+    for (const events of ["touchmove", "mousemove"]) {
         canvas.addEventListener(events, function (event: any) {
-          const index = getWidgetIndexById(id)
+            const index = getWidgetIndexById(id)
 
-          if (!gWidgets[index].data.isLocked) {
-              if (!gIsMouseDown) {
-                  return
-              }
-              event.preventDefault()
-              canvasAddPoint(event, id, true, false)
-          }
+            if (!gWidgets[index].data.isLocked) {
+                if (!gIsMouseDown) {
+                    return
+                }
+                event.preventDefault()
+                canvasAddPoint(event, id, true, false)
+            }
         })
-      }
+    }
 
-      for (const events of ["touchend", "touchleave", "mouseup"]) {
+    for (const events of ["touchend", "touchleave", "mouseup"]) {
         canvas.addEventListener(events, function (event: any) {
-          const index = getWidgetIndexById(id)
+            const index = getWidgetIndexById(id)
 
-          if (!gWidgets[index].data.isLocked) {
-              gIsMouseDown = false
-          }
+            if (!gWidgets[index].data.isLocked) {
+                gIsMouseDown = false
+            }
         })
-      }
+    }
 
     div.appendChild(canvas)
 
     document.body.appendChild(div)
+
+    canvasDrawPointsOnIt(id, widget.data.pointsHistory)
 }
 
 
