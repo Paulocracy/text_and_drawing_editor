@@ -28,22 +28,41 @@ function button_function() {
 
 
 //////////////////////////////
-function getPoint(x: number, y: number, lineWidth: number, color: string, visibleLineToIt: boolean) {
-    return {
-        x: x,
-        y: y,
-        lineWidth: lineWidth,
-        color: color,
-        visibleLineToIt: visibleLineToIt,
-    }
-}
-
-let g_isMousedown = false
-let g_points: any[] = []
-let g_startPoint: any
-var g_widgets = [
+// GLOBAL VARIABLES SECTION //
+// All global variables start with "g"
+/**
+ * Global variable tracking whether or not the user's mouse in in a "down" state, i.e,
+ * if a mouse button is currently pressed.
+*/
+let gIsMouseDown = false
+/**
+ * Global variable containing all drawn points since the user pressed
+ * a mouse button for the last time.
+ */
+let gPoints: any[] = []
+/**
+ * Global variable containing the Point in the currently active canvas
+ * at the beginning of the current drawing process.
+ */
+let gStartPoint: any
+/**
+ * Global variable which is a list containing all widgets of the current session
+ * in an ordered list. "Ordered" means that the first element is at the top,
+ * the second below it, etc... Each widget, i.e., the list's constituents, contains
+ * an "id" string parameter which is the widget's unique ID, a "type" string parameter
+ * which is either "canvas", "text" or "chapter", and a "data" JSON object which
+ * contain's a widget's data depending on its type, i.e.:
+ *
+ * If the widget is a "canvas", the data contains: 1) A "pointsHistory" list of Points
+ * containing all drawn Points of the canvas, 2) an "isLocked" boolean showing whether
+ * or not the user allows it to draw on the canvas, 3) an "isWithPressure" boolean
+ * showing whether or not the user wants to draw with an acknowledgement of a touch
+ * device's pressure.
+ */
+let gWidgets = [
     {
         id: "ABCDE",
+        type: "canvas",
         data: {
             pointsHistory: [],
             isLocked: false,
@@ -52,6 +71,7 @@ var g_widgets = [
     },
     {
         id: "BBBB",
+        type: "canvas",
         data: {
             pointsHistory: [],
             isLocked: false,
@@ -60,9 +80,19 @@ var g_widgets = [
     },
 ]
 
-function getWidgetIndexById(id: string): number {
+
+// GLOBAL WIDGET FUNCTION SECTION //
+/**
+ * Returns the index (i.e., 0 up to the length of the global widgets variable)
+ * of the element with the given ID in the global widgets variable.
+ *
+ * @param id The ID of the widget for which we are looking after its ID in
+ * the global widgest variable.
+ * @returns
+ */
+ function getWidgetIndexById(id: string): number {
     let index = 0
-    for (let widget of g_widgets) {
+    for (let widget of gWidgets) {
         if (widget.id == id) {
             break
         }
@@ -71,71 +101,100 @@ function getWidgetIndexById(id: string): number {
     return index
 }
 
-function canvasClear(id: string) {
-    const canvas: any = document.getElementById("canvas"+id)
-    const context = canvas.getContext("2d")
-    context.clearRect(0, 0, canvas.width, canvas.height)
 
-    g_points = []
-    const index = getWidgetIndexById(id)
-    g_widgets[index].data.pointsHistory = []
+// POINT DEFINITION SECTION //
+/**
+ * Get a JS object (i.e., a JSON) of a canvas drawing point containing the given parameters
+ * with the given names. This points contains all (at the time of its drawing) current
+ * canvas drawing settings.
+ *
+ * @param x The point's x coordinate in a coordinate system with the canvas's upper
+ * left corner as origin (0|0). x is rising from left to right.
+ * @param y The point's y coordinate in a coordinate system with the canvas's upper
+ * left corner as origin (0|0). y is rising from up to down.
+ * @param lineWidth The line's drawing width. The higher the value, the thicker the line.
+ * @param color The line's color, which usually is a string including a usual color name
+ * such as, e.g., "black" or "red".
+ * @param hasVisibleLineToIt If true, this point will be connected by a line from the last
+ * drawn canvas point. If false, no such line will be drawn. A typical example for a state
+ * where this value is "false" is when the user, after a line was drawn on the canvas and
+ * the mouse is released, starts to draw a new line which we don't want to connect with the
+ * last line.
+ * @returns
+ */
+function getPoint(x: number, y: number, lineWidth: number, color: string, hasVisibleLineToIt: boolean) {
+    return {
+        x: x,
+        y: y,
+        lineWidth: lineWidth,
+        color: color,
+        hasVisibleLineToIt: hasVisibleLineToIt,
+    }
 }
 
-function canvasMove(id: string, xMove: number, yMove: number) {
-    let index = getWidgetIndexById(id)
 
-    for (let i=0; i<g_widgets[index].data.pointsHistory.length; i++) {
-        g_widgets[index].data.pointsHistory[i].x += xMove
-        g_widgets[index].data.pointsHistory[i].y += yMove
-    }
-
-    const canvas: any = document.getElementById("canvas"+id)
-    const context = canvas.getContext("2d")
-    context.clearRect(0, 0, canvas.width, canvas.height)
-
-    drawPointsOnCanvas(id, g_widgets[index].data.pointsHistory)
+// DOCUMENT-AFFENCTING FUNCTIONS SECTION //
+function documentAddButton(id: string, onclick: any, text: string) {
+    let button = document.createElement("button")
+    button.id = id
+    button.onclick = onclick
+    button.textContent = text
+    return button
 }
 
-function canvasResize(id: string) {
-    const newWidth = parseInt(document.forms.namedItem("canvasSize"+id).canvasWidth.value)
-    const newHeight = parseInt(document.forms.namedItem("canvasSize"+id).canvasHeight.value)
-    const canvas: any = document.getElementById("canvas"+id)
-
-    if (newWidth != NaN) {
-        canvas.width = newWidth
-    }
-    if (newHeight != NaN) {
-        canvas.height = newHeight
-    }
-
-    const index = getWidgetIndexById(id)
-    drawPointsOnCanvas(id, g_widgets[index].data.pointsHistory)
+function documentAddDiv(id: string) {
+    let div = document.createElement("div")
+    div.id = id
+    return div
 }
 
-function drawPointsOnCanvas(id: string, points: any[]) {
-  const canvas: any = document.getElementById("canvas"+id)
-  const context = canvas.getContext("2d")
-  context.lineCap = "round"
-  context.lineJoin = "round"
-
-  for (let right_index=1; right_index<points.length; right_index++) {
-    context.strokeStyle = points[right_index].color
-    context.lineWidth = points[right_index].lineWidth
-    context.beginPath()
-    context.moveTo(points[right_index-1].x, points[right_index-1].y)
-    if(points[right_index].visibleLineToIt) {
-        context.lineTo(points[right_index].x, points[right_index].y)
-    }
-    context.closePath()
-    context.stroke()
-  }
-  g_points.reverse()
-  while(g_points.length > 1) {
-    g_points.pop()
-  }
+function documentAddForm(id: string, method: HTMLFormElement['method']) {
+    let form = document.createElement("form")
+    form.name = id
+    form.method = method
+    return form
 }
 
-function addPoint(event: any, id: string, visibleLineToIt: boolean, setStartPoint) {
+function documentAddLabel(htmlFor: string, text: string) {
+    let label = document.createElement("label")
+    label.htmlFor = htmlFor
+    label.innerText = text
+    return label
+}
+
+function documentAddCheckboxInput(id: string, name: string, onclick: any) {
+    let input = document.createElement("input")
+    input.type = "checkbox"
+    input.id = id
+    input.name = name
+    input.onclick = onclick
+    return input
+}
+
+function documentAddRadioInput(id: string, name: string, value: string, checked: boolean) {
+    let input = document.createElement("input")
+    input.type = "radio"
+    input.id = id
+    input.name = name
+    input.value = value
+    input.checked = checked
+    return input
+}
+
+function documentAddTextlineInput(id: string, name: string, value: string, size: string) {
+    let input = document.createElement("input")
+    input.type = "text"
+    input.id = id
+    input.value = value
+    input.size = 2
+    input.required = true
+    input.name = name
+    return input
+}
+
+
+// CANVAS WIDGET FUNCTIONS SECTION //
+function canvasAddPoint(event: any, id: string, hasVisibleLineToIt: boolean, setStartPoint: boolean) {
     const canvas: any = document.getElementById("canvas"+id)
     const index = getWidgetIndexById(id)
 
@@ -173,16 +232,16 @@ function addPoint(event: any, id: string, visibleLineToIt: boolean, setStartPoin
         y = pageXYhandler.pageY - canvas.offsetTop
     } else if (selectedDrawmode == "horizontal") {
         x = pageXYhandler.pageX - canvas.offsetLeft
-        y = g_startPoint.y
+        y = gStartPoint.y
     } else if (selectedDrawmode == "vertical") {
-        x = g_startPoint.x
+        x = gStartPoint.x
         y = pageXYhandler.pageY - canvas.offsetTop
     } else if (selectedDrawmode == "rising") {
         x = pageXYhandler.pageX - canvas.offsetLeft
-        y = g_startPoint.y - (x - g_startPoint.x)
+        y = gStartPoint.y - (x - gStartPoint.x)
     } else if (selectedDrawmode == "falling") {
         x = pageXYhandler.pageX - canvas.offsetLeft
-        y = g_startPoint.y + (x - g_startPoint.x)
+        y = gStartPoint.y + (x - gStartPoint.x)
     }
 
     const selectedColor = document.forms.namedItem("canvasColor"+id).color.value
@@ -196,82 +255,88 @@ function addPoint(event: any, id: string, visibleLineToIt: boolean, setStartPoin
         resultingLineWidth *= 100.0
     }
 
-    const newPoint = getPoint(x, y, resultingLineWidth, selectedColor, visibleLineToIt)
-    g_points.push(newPoint)
-    g_widgets[index].data.pointsHistory.push(newPoint)
+    const newPoint = getPoint(x, y, resultingLineWidth, selectedColor, hasVisibleLineToIt)
+    gPoints.push(newPoint)
+    gWidgets[index].data.pointsHistory.push(newPoint)
 
     if (setStartPoint) {
-        g_startPoint = newPoint
+        gStartPoint = newPoint
     }
 
-    drawPointsOnCanvas(id, g_points)
+    canvasDrawPointsOnIt(id, gPoints)
+}
+
+function canvasClear(id: string) {
+    const canvas: any = document.getElementById("canvas"+id)
+    const context = canvas.getContext("2d")
+    context.clearRect(0, 0, canvas.width, canvas.height)
+
+    gPoints = []
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.pointsHistory = []
+}
+
+function canvasDrawPointsOnIt(id: string, points: any[]) {
+    const canvas: any = document.getElementById("canvas"+id)
+    const context = canvas.getContext("2d")
+    context.lineCap = "round"
+    context.lineJoin = "round"
+
+    for (let right_index=1; right_index<points.length; right_index++) {
+        context.strokeStyle = points[right_index].color
+        context.lineWidth = points[right_index].lineWidth
+        context.beginPath()
+        context.moveTo(points[right_index-1].x, points[right_index-1].y)
+        if(points[right_index].hasVisibleLineToIt) {
+            context.lineTo(points[right_index].x, points[right_index].y)
+        }
+        context.closePath()
+        context.stroke()
+    }
+    gPoints.reverse()
+    while(gPoints.length > 1) {
+        gPoints.pop()
+    }
 }
 
 function canvasLock(id: string) {
     const index = getWidgetIndexById(id)
-    g_widgets[index].data.isLocked = !g_widgets[index].data.isLocked
+    gWidgets[index].data.isLocked = !gWidgets[index].data.isLocked
 }
 
-function documentAddButton(id: string, onclick: any, text: string) {
-    let button = document.createElement("button")
-    button.id = id
-    button.onclick = onclick
-    button.textContent = text
-    return button
+function canvasMove(id: string, xMove: number, yMove: number) {
+    let index = getWidgetIndexById(id)
+
+    for (let i=0; i<gWidgets[index].data.pointsHistory.length; i++) {
+        gWidgets[index].data.pointsHistory[i].x += xMove
+        gWidgets[index].data.pointsHistory[i].y += yMove
+    }
+
+    const canvas: any = document.getElementById("canvas"+id)
+    const context = canvas.getContext("2d")
+    context.clearRect(0, 0, canvas.width, canvas.height)
+
+    canvasDrawPointsOnIt(id, gWidgets[index].data.pointsHistory)
 }
 
-function documentAddForm(id: string, method: HTMLFormElement['method']) {
-    let form = document.createElement("form")
-    form.name = id
-    form.method = method
-    return form
+function canvasResize(id: string) {
+    const newWidth = parseInt(document.forms.namedItem("canvasSize"+id).canvasWidth.value)
+    const newHeight = parseInt(document.forms.namedItem("canvasSize"+id).canvasHeight.value)
+    const canvas: any = document.getElementById("canvas"+id)
+
+    if (newWidth != NaN) {
+        canvas.width = newWidth
+    }
+    if (newHeight != NaN) {
+        canvas.height = newHeight
+    }
+
+    const index = getWidgetIndexById(id)
+    canvasDrawPointsOnIt(id, gWidgets[index].data.pointsHistory)
 }
 
-function documentAddDiv(id: string) {
-    let div = document.createElement("div")
-    div.id = id
-    return div
-}
 
-
-function documentAddLabel(htmlFor: string, text: string) {
-    let label = document.createElement("label")
-    label.htmlFor = htmlFor
-    label.innerText = text
-    return label
-}
-
-function documentAddTextlineInput(id: string, name: string, value: string, size: string) {
-    let input = document.createElement("input")
-    input.type = "text"
-    input.id = id
-    input.value = value
-    input.size = 2
-    input.required = true
-    input.name = name
-    return input
-}
-
-function documentAddRadioInput(id: string, name: string, value: string, checked: boolean) {
-    let input = document.createElement("input")
-    input.type = "radio"
-    input.id = id
-    input.name = name
-    input.value = value
-    input.checked = checked
-    return input
-}
-
-function documentAddCheckboxInput(id: string, name: string, onclick: any) {
-    let input = document.createElement("input")
-    input.type = "checkbox"
-    input.id = id
-    input.name = name
-    input.onclick = onclick
-    return input
-}
-
-////////
+// RENDER FUNCTIONS SECTION //
 function renderCanvasDiv(widget: any) {
     let id = widget.id
     let data = widget.classdata
@@ -412,10 +477,10 @@ function renderCanvasDiv(widget: any) {
         canvas.addEventListener(events, function (event: any) {
           const index = getWidgetIndexById(id)
 
-          if (!g_widgets[index].data.isLocked) {
-              g_isMousedown = true
-              g_points = []
-              addPoint(event, id, false, true)
+          if (!gWidgets[index].data.isLocked) {
+              gIsMouseDown = true
+              gPoints = []
+              canvasAddPoint(event, id, false, true)
           }
         })
       }
@@ -424,12 +489,12 @@ function renderCanvasDiv(widget: any) {
         canvas.addEventListener(events, function (event: any) {
           const index = getWidgetIndexById(id)
 
-          if (!g_widgets[index].data.isLocked) {
-              if (!g_isMousedown) {
+          if (!gWidgets[index].data.isLocked) {
+              if (!gIsMouseDown) {
                   return
               }
               event.preventDefault()
-              addPoint(event, id, true, false)
+              canvasAddPoint(event, id, true, false)
           }
         })
       }
@@ -438,8 +503,8 @@ function renderCanvasDiv(widget: any) {
         canvas.addEventListener(events, function (event: any) {
           const index = getWidgetIndexById(id)
 
-          if (!g_widgets[index].data.isLocked) {
-              g_isMousedown = false
+          if (!gWidgets[index].data.isLocked) {
+              gIsMouseDown = false
           }
         })
       }
@@ -450,8 +515,8 @@ function renderCanvasDiv(widget: any) {
 }
 
 
-renderCanvasDiv(g_widgets[0])
-renderCanvasDiv(g_widgets[1])
+renderCanvasDiv(gWidgets[0])
+renderCanvasDiv(gWidgets[1])
 
 function renderWidgets(widgets: any[]) {
     while (document.firstChild) {
@@ -471,5 +536,3 @@ function renderWidgets(widgets: any[]) {
         position++
     }
 }
-
-////g_canvas TEST END
