@@ -116,6 +116,16 @@ function getPoint(x, y, lineWidth, color, hasVisibleLineToIt) {
     };
 }
 // DOCUMENT-AFFENCTING FUNCTIONS SECTION //
+/**
+ * Creates a button in the current HTML document and
+ * returns this new button instance.
+ *
+ * @param id The button's ID. It should be unique in the whole document
+ * @param onclick The function that shall be executed if the button
+ * is clicked. It may also be an empty function such as function () {}
+ * @param text The text displayed in the button
+ * @returns The newly created button HTML element instance
+ */
 function documentAddButton(id, onclick, text) {
     var button = document.createElement("button");
     button.id = id;
@@ -123,23 +133,58 @@ function documentAddButton(id, onclick, text) {
     button.textContent = text;
     return button;
 }
+/**
+ * Creates a new div at the bottom for the HTML document
+ * and returns this new div instance.
+ *
+ * @param id The div's ID. It should be unique in the whole document
+ * @returns The newly created div HTML element instance
+ */
 function documentAddDiv(id) {
     var div = document.createElement("div");
     div.id = id;
     return div;
 }
+/**
+ * Creates a new form element for the HTML document
+ * and returns this new form instance.
+ *
+ * @param id The form's ID. It should be unique in the whole document
+ * @param method The form's action method (such as "dialog")
+ * @returns The newly created form HTML element instance
+ */
 function documentAddForm(id, method) {
     var form = document.createElement("form");
     form.name = id;
     form.method = method;
     return form;
 }
+/**
+ * Creates a new label element for the HTML document and
+ * returns this new label instance.
+ *
+ * @param htmlFor The label's associated element (such as a radio,
+ * checkbox etc.)
+ * @param text The displayed label text
+ * @returns The newly created label HTML element instance
+ */
 function documentAddLabel(htmlFor, text) {
     var label = document.createElement("label");
     label.htmlFor = htmlFor;
     label.innerText = text;
     return label;
 }
+/**
+ * Creates a new checkbox input element for the HTML document
+ * and returns the newly created input instance.
+ *
+ * @param id The checkbox's ID. It should be unique in the whole document
+ * @param name The checkox's name, i.e., the value for which it stands
+ * @param isChecked If true, the checkbox is checked. If false, it is unchecked
+ * @param onclick The function that shall be executed if the checkbox is clicked,
+ * which may also be an empty function such as function () {}
+ * @returns
+ */
 function documentAddCheckboxInput(id, name, isChecked, onclick) {
     var input = document.createElement("input");
     input.type = "checkbox";
@@ -149,6 +194,20 @@ function documentAddCheckboxInput(id, name, isChecked, onclick) {
     input.onclick = onclick;
     return input;
 }
+/**
+ * Creates a new radio button input element for the HTML document
+ * and returns the newly created input instance.
+ *
+ * @param id The radio button's ID. It should be unique in the whole document
+ * @param name The radio button's name, i.e., for which value it stands.
+ * A group of radio buttons can be created by giving them the same name
+ * (but not the same ID) so that only one of these buttons can be checked
+ * at the same time.
+ * @param value The value for which the radio button stands. E.g., if the
+ * name is "color", the value may be "yellow"
+ * @param checked If true, the radio button is checked. If false, it is unchecked
+ * @returns
+ */
 function documentAddRadioInput(id, name, value, checked) {
     var input = document.createElement("input");
     input.type = "radio";
@@ -158,6 +217,16 @@ function documentAddRadioInput(id, name, value, checked) {
     input.checked = checked;
     return input;
 }
+/**
+ * Creates a new text line input element for the HTML document
+ * and returns the newly created input instance.
+ *
+ * @param id The text line's ID. It should be unique in the whole document
+ * @param name The name which can be accessed in the text line's form
+ * @param value The initial value (as string) that is displayed in the text line
+ * @param size The width of the text line, usually in monospaced characters
+ * @returns
+ */
 function documentAddTextlineInput(id, name, value, size) {
     var input = document.createElement("input");
     input.type = "text";
@@ -169,19 +238,30 @@ function documentAddTextlineInput(id, name, value, size) {
     return input;
 }
 // CANVAS WIDGET FUNCTIONS SECTION //
+/**
+ * Adds a Point to the associated widget of the canvas with
+ * the given ID, under consideration of the given arguments.
+ *
+ * @param event The event with which the point shall be added. This
+ * e.g. determines if the point width can be influenced by pressure or
+ * not (if not, it means that event does not contain pressure data)
+ * @param id The canvas's ID
+ * @param hasVisibleLineToIt If true, a line will be drawn from
+ * the canvas's last point to it. If false (e.g. if the user
+ * starts drawing a new line after not touching the canvas), no
+ * such line will be drawn and this line will be invisible.
+ * @param setStartPoint Whether (true) or not (false) this is the
+ * start point of a new line. If yes, the global start point variable
+ * will be set to this Point
+ */
 function canvasAddPoint(event, id, hasVisibleLineToIt, setStartPoint) {
     var canvas = document.getElementById("canvas" + id);
     var index = getWidgetIndexById(id);
+    var selectedDrawmode;
+    selectedDrawmode = document.forms.namedItem("drawmodeRadios" + id).drawmode.value;
     var pressure;
     var x;
     var y;
-    var selectedDrawmode;
-    if (!setStartPoint) {
-        selectedDrawmode = document.forms.namedItem("drawmodeRadios" + id).drawmode.value;
-    }
-    else {
-        selectedDrawmode = "free";
-    }
     var pageXYhandler;
     if (event.touches && event.touches[0] && typeof event.touches[0]["force"] !== "undefined") {
         if (event.touches[0]["force"] > 0) {
@@ -242,10 +322,18 @@ function canvasAddPoint(event, id, hasVisibleLineToIt, setStartPoint) {
     }
     canvasDrawPointsOnIt(id, gPoints);
 }
+/**
+ * Deletes the drawing content of the canvas as well
+ * as its associated widget data.
+ *
+ * @param id The canvas's ID
+ */
 function canvasClear(id) {
+    // Delete the canvas's drawing content
     var canvas = document.getElementById("canvas" + id);
     var context = canvas.getContext("2d");
     context.clearRect(0, 0, canvas.width, canvas.height);
+    // Delete associated widget data
     gPoints = [];
     var index = getWidgetIndexById(id);
     gWidgets[index].data.pointsHistory = [];
@@ -292,6 +380,18 @@ function canvasLock(id) {
     var index = getWidgetIndexById(id);
     gWidgets[index].data.isLocked = !gWidgets[index].data.isLocked;
 }
+/**
+ * Moves the canvas's drawing content by the given X and Y value.
+ * In fact, it changes the canvas's associated widget data with
+ * these X and Y values, clears the canvas and redraws the updated
+ * widget data.
+ *
+ * @param id The canvas's ID
+ * @param xMove How many pixels the canvas's content shall be moved
+ * to the right (positive) or left (negative)
+ * @param yMove How many pixels the canvas's content shall be moved
+ * down (positive) or up (negative)
+ */
 function canvasMove(id, xMove, yMove) {
     var index = getWidgetIndexById(id);
     for (var i = 0; i < gWidgets[index].data.pointsHistory.length; i++) {
@@ -303,7 +403,15 @@ function canvasMove(id, xMove, yMove) {
     context.clearRect(0, 0, canvas.width, canvas.height);
     canvasDrawPointsOnIt(id, gWidgets[index].data.pointsHistory);
 }
+/**
+ * Resizes the canvas width and height according to its associated
+ * size text line inputs. Since a resize deletes the canvas's content,
+ * the content is redrawn after the resize.
+ *
+ * @param id The canvas's ID
+ */
 function canvasResize(id) {
+    // TODO: Make it independent from the text line input
     var newWidth = parseInt(document.forms.namedItem("canvasSize" + id).canvasWidth.value);
     var newHeight = parseInt(document.forms.namedItem("canvasSize" + id).canvasHeight.value);
     var canvas = document.getElementById("canvas" + id);
@@ -317,9 +425,17 @@ function canvasResize(id) {
     canvasDrawPointsOnIt(id, gWidgets[index].data.pointsHistory);
 }
 // RENDER FUNCTIONS SECTION //
+/**
+ * Renders the canvas with the given associated widget data
+ * (which includes e.g. the ID, points etc.) in the form of
+ * the addition of a div with all associated canvas HTML
+ * elements. THis div is added at the bottom of the HTML
+ * element.
+ *
+ * @param widget The associated widget data
+ */
 function renderCanvasDiv(widget) {
     var id = widget.id;
-    var data = widget.classdata;
     var div = documentAddDiv("divCanvas" + id);
     // Canvas movement form
     var moveForm = documentAddForm("canvasMovement" + id, "dialog");
@@ -425,6 +541,7 @@ function renderCanvasDiv(widget) {
     canvas.height = 500;
     canvas.style.border = "1px solid black";
     canvas.textContent = "Unfortunately, your browser does not support canvas elements.";
+    // Touch & Mouse event associations
     for (var _i = 0, _a = ["touchstart", "mousedown"]; _i < _a.length; _i++) {
         var events = _a[_i];
         canvas.addEventListener(events, function (event) {
