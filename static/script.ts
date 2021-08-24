@@ -14,7 +14,7 @@ var socket = io()
 // for a working static import wouldn't work correctly
 
 socket.on('connect', function() {
-    alert("B")
+    alert("Server connected")
 })
 socket.on('custom_event_2', function() {
     socket.emit('custom_event_3', {data: 'I\'m connected!'})
@@ -78,6 +78,15 @@ let gWidgets = [
             isWithPressure: false,
         },
     },
+    {
+        id: "XXXX",
+        type: "text",
+        data: {
+            text: "ABC",
+            bordercolor: "none",
+            font: "standard",
+        }
+    }
 ]
 
 
@@ -231,14 +240,30 @@ function documentAddCheckboxInput(id: string, name: string, isChecked: boolean, 
  * @param checked If true, the radio button is checked. If false, it is unchecked
  * @returns
  */
-function documentAddRadioInput(id: string, name: string, value: string, checked: boolean) {
+function documentAddRadioInput(id: string, name: string, value: string, checked: boolean, onclick: any) {
     let input = document.createElement("input")
     input.type = "radio"
     input.id = id
     input.name = name
     input.value = value
     input.checked = checked
+    input.onclick = onclick
     return input
+}
+
+function documentAddTextarea(id: string, text: string, cols: number, rows: number) {
+    let textarea = document.createElement("textarea")
+    textarea.id = id
+    textarea.value = text
+    textarea.cols = cols
+    textarea.rows = rows
+    // Auto-resize height thanks to the answer of
+    // https://stackoverflow.com/questions/7745741/auto-expanding-textarea
+    textarea.oninput = function() {
+        textarea.style.height = ""
+        textarea.style.height = Math.min(textarea.scrollHeight, 300) + "px"
+    }
+    return textarea
 }
 
 /**
@@ -463,7 +488,164 @@ function canvasResize(id: string) {
 }
 
 
+// TEXTAREA WIDGET FUNCTIONS SECTION //
+function textareaInsert(id: string, insert: string, multi: boolean) {
+    const textarea: any = document.getElementById("textarea"+id)
+    const selectionStart = textarea.selectionStart
+    const selectionEnd = textarea.selectionEnd
+    const oldtext: string = textarea.value
+    let newtext: string = ""
+    if ((selectionStart == selectionEnd) || (!multi)) {
+        newtext = oldtext.slice(0, selectionEnd) + insert
+        newtext += oldtext.slice(selectionEnd)
+    } else {
+        newtext = oldtext.slice(0, selectionStart) + insert
+        newtext += oldtext.slice(selectionStart, selectionEnd) + insert
+        newtext += oldtext.slice(selectionEnd)
+    }
+
+    textarea.value = newtext
+    textareaUpdateWidgetText(id)
+}
+
+function textareaAddBold(id: string) {
+    textareaInsert(id, "*", true)
+}
+
+function textareaAddItalic(id: string) {
+    textareaInsert(id, "_", true)
+}
+
+function textareaAddHyperlink(id: string) {
+    textareaInsert(id, "[Text](URL)", false)
+}
+
+function textareaAddAnchor(id: string) {
+    textareaInsert(id, "{{{ID}}}", false)
+}
+
+function textareaAddCounter(id: string) {
+    textareaInsert(id, "{{{{ID}}}}", false)
+}
+
+function textareaAddNewline(id: string) {
+    textareaInsert(id, "<br>", false)
+}
+
+function textareaSetBordercolor(id: string, color: string) {
+    let index = getWidgetIndexById(id)
+    gWidgets[index].data.bordercolor = color
+    const textarea = document.getElementById("textarea"+id)
+    if (color == "none") {
+        textarea.style.border = "1px solid " + color
+    } else {
+        textarea.style.border = "1px solid " + color
+    }
+}
+
+function textareaSetFont(id: string, font: string) {
+    let index = getWidgetIndexById(id)
+    gWidgets[index].data.font = font
+}
+
+function textareaUpdateWidgetText(id: string) {
+    let index = getWidgetIndexById(id)
+    const textarea: any = document.getElementById("textarea"+id)
+    gWidgets[index].data.text = textarea.value
+}
+
 // RENDER FUNCTIONS SECTION //
+function renderTextDiv(widget: any) {
+    let id = widget.id
+    let div = documentAddDiv("divText"+id)
+
+    // Border color radios
+    let bordercolorForm = documentAddForm("textBordercolor"+id, "dialog")
+    const isNone = widget.data.bordercolor == "none"
+    const radioNone = documentAddRadioInput("radioNone"+id, "bordercolor", "none", isNone,
+        function() { textareaSetBordercolor(id, "none") })
+    const labelNone = documentAddLabel("radioNone"+id, "None")
+    bordercolorForm.appendChild(radioNone)
+    bordercolorForm.appendChild(labelNone)
+    const isBlack = widget.data.bordercolor == "black"
+    const radioBlack = documentAddRadioInput("radioBlack"+id, "bordercolor", "black", isBlack,
+        function() { textareaSetBordercolor(id, "none") })
+    const labelBlack = documentAddLabel("radioNone"+id, "Black")
+    bordercolorForm.appendChild(radioBlack)
+    bordercolorForm.appendChild(labelBlack)
+    div.appendChild(bordercolorForm)
+
+    // Font radios
+    let fontForm = documentAddForm("textBordercolor"+id, "dialog")
+    const isStandard = widget.data.font == "standard"
+    const radioStandard = documentAddRadioInput("radioStandard"+id, "font", "standard", isStandard,
+        function() { textareaSetFont(id, "none") })
+    const labelStandard = documentAddLabel("radioStandard"+id, "Standard")
+    fontForm.appendChild(radioStandard)
+    fontForm.appendChild(labelStandard)
+    div.appendChild(fontForm)
+    const isMonospaced = widget.data.font == "monospaced"
+    const radioMonospaced = documentAddRadioInput("radioMonospaced"+id, "font", "monospaced", isMonospaced,
+        function() { textareaSetFont(id, "monospaced") })
+    const labelMonospaced = documentAddLabel("radioMonospaced"+id, "Monospaced")
+    fontForm.appendChild(radioMonospaced)
+    fontForm.appendChild(labelMonospaced)
+    div.appendChild(fontForm)
+
+    // Text addition buttons
+    const buttonBold = documentAddButton(
+        "buttonBold"+id,
+        function() { textareaAddBold(id) },
+        "Bold"
+    )
+    div.appendChild(buttonBold)
+    const buttonItalic = documentAddButton(
+        "buttonItalic"+id,
+        function() { textareaAddItalic(id) },
+        "Italic"
+    )
+    div.appendChild(buttonItalic)
+    const buttonHyperlink = documentAddButton(
+        "buttonHyperlink"+id,
+        function() { textareaAddHyperlink(id) },
+        "Hyperlink"
+    )
+    div.appendChild(buttonHyperlink)
+    const buttonAnchor = documentAddButton(
+        "buttonAnchor"+id,
+        function() { textareaAddAnchor(id) },
+        "Anchor"
+    )
+    div.appendChild(buttonAnchor)
+    const buttonCounter = documentAddButton(
+        "buttonCounter"+id,
+        function() { textareaAddCounter(id) },
+        "Counter"
+    )
+    div.appendChild(buttonCounter)
+    const buttonNewline = documentAddButton(
+        "buttonNewline"+id,
+        function() { textareaAddNewline(id) },
+        "Newline"
+    )
+    div.appendChild(buttonNewline)
+
+    // Newline after buttons
+    const br = document.createElement("br")
+    div.appendChild(br)
+
+    // The actual textarea
+    const textarea = documentAddTextarea("textarea"+id, widget.data.text, 75, 10)
+    div.appendChild(textarea)
+
+    // Events
+    textarea.onkeyup = function() { textareaUpdateWidgetText(id) }
+
+    document.body.appendChild(div)
+
+    textareaSetBordercolor(id, widget.data.bordercolor)
+}
+
 /**
  * Renders the canvas with the given associated widget data
  * (which includes e.g. the ID, points etc.) in the form of
@@ -525,27 +707,27 @@ function renderCanvasDiv(widget: any) {
 
     // Canvas color form
     let colorForm = documentAddForm("canvasColor"+id, "dialog")
-    const radioBlack = documentAddRadioInput("radioBlack"+id, "color", "black", true)
+    const radioBlack = documentAddRadioInput("radioBlack"+id, "color", "black", true, function() {})
     const labelBlack = documentAddLabel("radioBlack"+id, "Black")
     colorForm.appendChild(radioBlack)
     colorForm.appendChild(labelBlack)
-    const radioWhite = documentAddRadioInput("radioWhite"+id, "color", "white", false)
+    const radioWhite = documentAddRadioInput("radioWhite"+id, "color", "white", false, function() {})
     const labelWhite = documentAddLabel("radioWhite"+id, "White")
     colorForm.appendChild(radioWhite)
     colorForm.appendChild(labelWhite)
-    const radioRed = documentAddRadioInput("radioRed"+id, "color", "red", false)
+    const radioRed = documentAddRadioInput("radioRed"+id, "color", "red", false, function() {})
     const labelRed = documentAddLabel("radioRed"+id, "Red")
     colorForm.appendChild(radioRed)
     colorForm.appendChild(labelRed)
-    const radioBlue = documentAddRadioInput("radioBlue"+id, "color", "blue", false)
+    const radioBlue = documentAddRadioInput("radioBlue"+id, "color", "blue", false, function() {})
     const labelBlue = documentAddLabel("radioBlue"+id, "Blue")
     colorForm.appendChild(radioBlue)
     colorForm.appendChild(labelBlue)
-    const radioGreen = documentAddRadioInput("radioGreen"+id, "color", "green", false)
+    const radioGreen = documentAddRadioInput("radioGreen"+id, "color", "green", false, function() {})
     const labelGreen = documentAddLabel("radioGreen"+id, "Green")
     colorForm.appendChild(radioGreen)
     colorForm.appendChild(labelGreen)
-    const radioYellow = documentAddRadioInput("radioYellow"+id, "color", "yellow", false)
+    const radioYellow = documentAddRadioInput("radioYellow"+id, "color", "yellow", false, function() {})
     const labelYellow = documentAddLabel("radioYellow"+id, "Yellow")
     colorForm.appendChild(radioYellow)
     colorForm.appendChild(labelYellow)
@@ -553,15 +735,15 @@ function renderCanvasDiv(widget: any) {
 
     // Pencil width form
     let widthForm = documentAddForm("canvasWidth"+id, "dialog")
-    const radioThin = documentAddRadioInput("radioThin"+id, "width", "thin", true)
+    const radioThin = documentAddRadioInput("radioThin"+id, "width", "thin", true, function() {})
     const labelThin = documentAddLabel("radioThin"+id, "Thin")
     widthForm.appendChild(radioThin)
     widthForm.appendChild(labelThin)
-    const radioMedium = documentAddRadioInput("radioMedium"+id, "width", "medium", false)
+    const radioMedium = documentAddRadioInput("radioMedium"+id, "width", "medium", false, function() {})
     const labelMedium = documentAddLabel("radioMedium"+id, "Medium")
     widthForm.appendChild(radioMedium)
     widthForm.appendChild(labelMedium)
-    const radioThick = documentAddRadioInput("radioThick"+id, "width", "thick", false)
+    const radioThick = documentAddRadioInput("radioThick"+id, "width", "thick", false, function() {})
     const labelThick = documentAddLabel("radioThick"+id, "Thick")
     widthForm.appendChild(radioThick)
     widthForm.appendChild(labelThick)
@@ -577,23 +759,23 @@ function renderCanvasDiv(widget: any) {
 
     // Drawmode form
     let drawmodeForm = documentAddForm("drawmodeRadios"+id, "dialog")
-    const radioFree = documentAddRadioInput("radioFree"+id, "drawmode", "free", true)
+    const radioFree = documentAddRadioInput("radioFree"+id, "drawmode", "free", true, function() {})
     const labelFree = documentAddLabel("radioFree"+id, "Free")
     drawmodeForm.appendChild(radioFree)
     drawmodeForm.appendChild(labelFree)
-    const radioHorizontal = documentAddRadioInput("radioHorizontal"+id, "drawmode", "horizontal", false)
+    const radioHorizontal = documentAddRadioInput("radioHorizontal"+id, "drawmode", "horizontal", false, function() {})
     const labelHorizontal = documentAddLabel("radioHorizontal"+id, "Horizontal")
     drawmodeForm.appendChild(radioHorizontal)
     drawmodeForm.appendChild(labelHorizontal)
-    const radioVertical = documentAddRadioInput("radioVertical"+id, "drawmode", "vertical", false)
+    const radioVertical = documentAddRadioInput("radioVertical"+id, "drawmode", "vertical", false, function() {})
     const labelVertical = documentAddLabel("radioVertical"+id, "Vertical")
     drawmodeForm.appendChild(radioVertical)
     drawmodeForm.appendChild(labelVertical)
-    const radioRising = documentAddRadioInput("radioRising"+id, "drawmode", "rising", false)
+    const radioRising = documentAddRadioInput("radioRising"+id, "drawmode", "rising", false, function() {})
     const labelRising = documentAddLabel("radioRising"+id, "Rising")
     drawmodeForm.appendChild(radioRising)
     drawmodeForm.appendChild(labelRising)
-    const radioFalling = documentAddRadioInput("radioFalling"+id, "drawmode", "falling", false)
+    const radioFalling = documentAddRadioInput("radioFalling"+id, "drawmode", "falling", false, function() {})
     const labelFalling = documentAddLabel("radioFalling"+id, "Falling")
     drawmodeForm.appendChild(radioFalling)
     drawmodeForm.appendChild(labelFalling)
@@ -654,6 +836,7 @@ function renderCanvasDiv(widget: any) {
 
 renderCanvasDiv(gWidgets[0])
 renderCanvasDiv(gWidgets[1])
+renderTextDiv(gWidgets[2])
 
 function renderWidgets(widgets: any[]) {
     while (document.firstChild) {
