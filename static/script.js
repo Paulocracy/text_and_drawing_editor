@@ -73,6 +73,23 @@ var gWidgets = [
             bordercolor: "none",
             font: "standard"
         }
+    },
+    {
+        id: "GGGG",
+        type: "caption",
+        data: {
+            text: "FGDA",
+            id: "asdsad",
+            level: "2"
+        }
+    },
+    {
+        id: "TTTT",
+        type: "counter",
+        data: {
+            id: "QWEAA",
+            br: false
+        }
     }
 ];
 // GLOBAL WIDGET FUNCTION SECTION //
@@ -227,6 +244,19 @@ function documentAddRadioInput(id, name, value, checked, onclick) {
     input.onclick = onclick;
     return input;
 }
+function documentAddSelect(id, name, options) {
+    var select = document.createElement("select");
+    select.id = id;
+    select.name = name;
+    for (var _i = 0, options_1 = options; _i < options_1.length; _i++) {
+        var optionStr = options_1[_i];
+        var option = document.createElement("option");
+        option.value = optionStr;
+        option.innerText = optionStr;
+        select.appendChild(option);
+    }
+    return select;
+}
 function documentAddTextarea(id, text, cols, rows) {
     var textarea = document.createElement("textarea");
     textarea.id = id;
@@ -256,10 +286,27 @@ function documentAddTextlineInput(id, name, value, size) {
     input.type = "text";
     input.id = id;
     input.value = value;
-    input.size = 2;
+    input.size = Number(size);
     input.required = true;
     input.name = name;
     return input;
+}
+// CAPTION WIDGET FUNCTIONS SECTION //
+function captionChangeLevel(id) {
+    var select = document.getElementById("selectLevel" + id);
+    var level = select.value;
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.level = level;
+}
+function captionChangeId(id) {
+    var input = document.getElementById("captionId" + id);
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.id = input.value;
+}
+function captionChangeText(id) {
+    var input = document.getElementById("captionText" + id);
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.text = input.value;
 }
 // CANVAS WIDGET FUNCTIONS SECTION //
 /**
@@ -558,7 +605,55 @@ function renderTextDiv(widget) {
     // Events
     textarea.onkeyup = function () { textareaUpdateWidgetText(id); };
     document.body.appendChild(div);
-    textareaSetBordercolor(id, widget.data.bordercolor);
+    textareaUpdateWidgetText(id);
+}
+function counterChangeId(id) {
+    var input = document.getElementById("counterId" + id);
+    alert(input.value);
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.id = input.value;
+}
+function counterSwitchBr(id) {
+    var checkbox = document.getElementById("boxBr" + id);
+    var index = getWidgetIndexById(id);
+    alert(checkbox.checked);
+    gWidgets[index].data.br = checkbox.checked;
+}
+function renderCounterDiv(widget) {
+    var id = widget.id;
+    var div = documentAddDiv("divCounter" + id);
+    var labelId = documentAddLabel("counterId" + id, "ID: ");
+    var inputId = documentAddTextlineInput("counterId" + id, "counterId", widget.data.id, "2");
+    inputId.onkeyup = function () { counterChangeId(id); };
+    div.appendChild(labelId);
+    div.appendChild(inputId);
+    var checkboxBr = documentAddCheckboxInput("boxBr" + id, "br", widget.data.br, function () { counterSwitchBr(id); });
+    var labelBr = documentAddLabel("boxBr" + id, "Newline?");
+    div.appendChild(checkboxBr);
+    div.appendChild(labelBr);
+    document.body.appendChild(div);
+}
+function renderCaptionDiv(widget) {
+    var id = widget.id;
+    var div = documentAddDiv("divCaption" + id);
+    var levelLabel = documentAddLabel("selectLevel" + id, "Level:");
+    var options = ["1", "2", "3", "4", "5", "6"];
+    var select = documentAddSelect("selectLevel" + id, "level", options);
+    select.value = widget.data.level;
+    select.onchange = function () { captionChangeLevel(id); };
+    div.appendChild(levelLabel);
+    div.appendChild(select);
+    var labelId = documentAddLabel("captionId" + id, "ID: ");
+    var inputId = documentAddTextlineInput("captionId" + id, "captionId", widget.data.id, "2");
+    inputId.onkeyup = function () { captionChangeId(id); };
+    div.appendChild(labelId);
+    div.appendChild(inputId);
+    var labelText = documentAddLabel("text" + id, "Text: ");
+    var inputText = documentAddTextlineInput("captionText" + id, "captionText", widget.data.text, "25");
+    inputText.onkeyup = function () { captionChangeText(id); };
+    div.appendChild(labelText);
+    div.appendChild(inputText);
+    document.body.appendChild(div);
 }
 /**
  * Renders the canvas with the given associated widget data
@@ -637,11 +732,11 @@ function renderCanvasDiv(widget) {
     var labelThick = documentAddLabel("radioThick" + id, "Thick");
     widthForm.appendChild(radioThick);
     widthForm.appendChild(labelThick);
-    var checkboxPressure = documentAddCheckboxInput("boxPressure" + id, "pressure", widget.isLocked, function () { });
+    var checkboxPressure = documentAddCheckboxInput("boxPressure" + id, "pressure", widget.data.isLocked, function () { });
     var labelPressure = documentAddLabel("boxPressure" + id, "Pressure?");
     widthForm.appendChild(checkboxPressure);
     widthForm.appendChild(labelPressure);
-    var checkboxLocked = documentAddCheckboxInput("boxLocked" + id, "locked", widget.isWithPressure, function () { canvasLock(id); });
+    var checkboxLocked = documentAddCheckboxInput("boxLocked" + id, "locked", widget.data.isWithPressure, function () { canvasLock(id); });
     var labelLocked = documentAddLabel("boxLocked" + id, "Locked?");
     widthForm.appendChild(checkboxLocked);
     widthForm.appendChild(labelLocked);
@@ -717,6 +812,8 @@ function renderCanvasDiv(widget) {
 renderCanvasDiv(gWidgets[0]);
 renderCanvasDiv(gWidgets[1]);
 renderTextDiv(gWidgets[2]);
+renderCaptionDiv(gWidgets[3]);
+renderCounterDiv(gWidgets[4]);
 function renderWidgets(widgets) {
     while (document.firstChild) {
         document.removeChild(document.firstChild);

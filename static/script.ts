@@ -86,6 +86,23 @@ let gWidgets = [
             bordercolor: "none",
             font: "standard",
         }
+    },
+    {
+        id: "GGGG",
+        type: "caption",
+        data: {
+            text: "FGDA",
+            id: "asdsad",
+            level: "2",
+        }
+    },
+    {
+        id: "TTTT",
+        type: "counter",
+        data: {
+            id: "QWEAA",
+            br: false,
+        }
     }
 ]
 
@@ -251,6 +268,20 @@ function documentAddRadioInput(id: string, name: string, value: string, checked:
     return input
 }
 
+function documentAddSelect(id: string, name: string, options: string[]) {
+    let select = document.createElement("select")
+    select.id = id
+    select.name = name
+
+    for (let optionStr of options) {
+        let option = document.createElement("option")
+        option.value = optionStr
+        option.innerText = optionStr
+        select.appendChild(option)
+    }
+    return select
+}
+
 function documentAddTextarea(id: string, text: string, cols: number, rows: number) {
     let textarea = document.createElement("textarea")
     textarea.id = id
@@ -281,10 +312,30 @@ function documentAddTextlineInput(id: string, name: string, value: string, size:
     input.type = "text"
     input.id = id
     input.value = value
-    input.size = 2
+    input.size = Number(size)
     input.required = true
     input.name = name
     return input
+}
+
+// CAPTION WIDGET FUNCTIONS SECTION //
+function captionChangeLevel(id: string) {
+    const select: any = document.getElementById("selectLevel"+id)
+    const level = select.value
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.level = level
+}
+
+function captionChangeId(id: string) {
+    const input: any = document.getElementById("captionId"+id)
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.id = input.value
+}
+
+function captionChangeText(id: string) {
+    const input: any = document.getElementById("captionText"+id)
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.text = input.value
 }
 
 
@@ -643,7 +694,67 @@ function renderTextDiv(widget: any) {
 
     document.body.appendChild(div)
 
-    textareaSetBordercolor(id, widget.data.bordercolor)
+    textareaUpdateWidgetText(id)
+}
+
+function counterChangeId(id: string) {
+    const input: any = document.getElementById("counterId"+id)
+    alert(input.value)
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.id = input.value
+}
+
+function counterSwitchBr(id: string) {
+    const checkbox: any = document.getElementById("boxBr"+id)
+    const index = getWidgetIndexById(id)
+    alert(checkbox.checked)
+    gWidgets[index].data.br = checkbox.checked
+}
+
+function renderCounterDiv(widget: any) {
+    let id = widget.id
+    let div = documentAddDiv("divCounter"+id)
+
+    const labelId = documentAddLabel("counterId"+id, "ID: ")
+    const inputId = documentAddTextlineInput("counterId"+id, "counterId", widget.data.id, "2")
+    inputId.onkeyup = function () { counterChangeId(id) }
+    div.appendChild(labelId)
+    div.appendChild(inputId)
+
+    const checkboxBr = documentAddCheckboxInput("boxBr"+id, "br", widget.data.br,
+        function() { counterSwitchBr(id) })
+    const labelBr = documentAddLabel("boxBr"+id, "Newline?")
+    div.appendChild(checkboxBr)
+    div.appendChild(labelBr)
+
+    document.body.appendChild(div)
+}
+
+function renderCaptionDiv(widget: any) {
+    let id = widget.id
+    let div = documentAddDiv("divCaption"+id)
+
+    const levelLabel = documentAddLabel("selectLevel"+id, "Level:")
+    const options = ["1", "2", "3", "4", "5", "6"]
+    const select = documentAddSelect("selectLevel"+id, "level", options)
+    select.value = widget.data.level
+    select.onchange = function () { captionChangeLevel(id) }
+    div.appendChild(levelLabel)
+    div.appendChild(select)
+
+    const labelId = documentAddLabel("captionId"+id, "ID: ")
+    const inputId = documentAddTextlineInput("captionId"+id, "captionId", widget.data.id, "2")
+    inputId.onkeyup = function () { captionChangeId(id) }
+    div.appendChild(labelId)
+    div.appendChild(inputId)
+
+    const labelText = documentAddLabel("text"+id, "Text: ")
+    const inputText = documentAddTextlineInput("captionText"+id, "captionText", widget.data.text, "25")
+    inputText.onkeyup = function () { captionChangeText(id) }
+    div.appendChild(labelText)
+    div.appendChild(inputText)
+
+    document.body.appendChild(div)
 }
 
 /**
@@ -747,11 +858,11 @@ function renderCanvasDiv(widget: any) {
     const labelThick = documentAddLabel("radioThick"+id, "Thick")
     widthForm.appendChild(radioThick)
     widthForm.appendChild(labelThick)
-    const checkboxPressure = documentAddCheckboxInput("boxPressure"+id, "pressure", widget.isLocked, function() {})
+    const checkboxPressure = documentAddCheckboxInput("boxPressure"+id, "pressure", widget.data.isLocked, function() {})
     const labelPressure = documentAddLabel("boxPressure"+id, "Pressure?")
     widthForm.appendChild(checkboxPressure)
     widthForm.appendChild(labelPressure)
-    const checkboxLocked = documentAddCheckboxInput("boxLocked"+id, "locked", widget.isWithPressure, function() { canvasLock(id) })
+    const checkboxLocked = documentAddCheckboxInput("boxLocked"+id, "locked", widget.data.isWithPressure, function() { canvasLock(id) })
     const labelLocked = documentAddLabel("boxLocked"+id, "Locked?")
     widthForm.appendChild(checkboxLocked)
     widthForm.appendChild(labelLocked)
@@ -837,6 +948,8 @@ function renderCanvasDiv(widget: any) {
 renderCanvasDiv(gWidgets[0])
 renderCanvasDiv(gWidgets[1])
 renderTextDiv(gWidgets[2])
+renderCaptionDiv(gWidgets[3])
+renderCounterDiv(gWidgets[4])
 
 function renderWidgets(widgets: any[]) {
     while (document.firstChild) {
