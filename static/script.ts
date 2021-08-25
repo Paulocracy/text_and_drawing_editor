@@ -715,7 +715,7 @@ function renderCounterDiv(widget: any) {
     let id = widget.id
     let div = documentAddDiv("divCounter"+id)
 
-    const labelId = documentAddLabel("counterId"+id, "ID: ")
+    const labelId = documentAddLabel("counterId"+id, "Counter ID: ")
     const inputId = documentAddTextlineInput("counterId"+id, "counterId", widget.data.id, "2")
     inputId.onkeyup = function () { counterChangeId(id) }
     div.appendChild(labelId)
@@ -734,7 +734,7 @@ function renderCaptionDiv(widget: any) {
     let id = widget.id
     let div = documentAddDiv("divCaption"+id)
 
-    const levelLabel = documentAddLabel("selectLevel"+id, "Level:")
+    const levelLabel = documentAddLabel("selectLevel"+id, "Caption level:")
     const options = ["1", "2", "3", "4", "5", "6"]
     const select = documentAddSelect("selectLevel"+id, "level", options)
     select.value = widget.data.level
@@ -944,28 +944,73 @@ function renderCanvasDiv(widget: any) {
     canvasDrawPointsOnIt(id, widget.data.pointsHistory)
 }
 
+function menuLoad() {}
+function menuSave() {}
 
-renderCanvasDiv(gWidgets[0])
-renderCanvasDiv(gWidgets[1])
-renderTextDiv(gWidgets[2])
-renderCaptionDiv(gWidgets[3])
-renderCounterDiv(gWidgets[4])
+function renderMenuDiv() {
+    let div = documentAddDiv("divMenu")
+    const loadButton = documentAddButton("loadButton", function() { menuLoad() }, "Load...")
+    div.appendChild(loadButton)
+    const saveButton = documentAddButton("saveButton", function() { menuSave() }, "Save...")
+    div.appendChild(saveButton)
+
+    const hr = document.createElement("hr")
+    div.appendChild(hr)
+
+    document.body.appendChild(div)
+}
+
+function controlAddCanvas(position: number) {}
+function controlAddText(position: number) {}
+function controlAddCaption(position: number) {}
+function controlAddCounter(position: number) {}
+function controlSwitchWidgets(position: number) {}
+function controlDeletePrevious(position: number) {}
+
+function renderControlDiv(position: number) {
+    let div = documentAddDiv("divControl"+position)
+
+    const addCanvas = documentAddButton("buttonAddCanvas"+position,
+        function() { controlAddCanvas(position) }, "+Canvas")
+    div.appendChild(addCanvas)
+    const addText = documentAddButton("buttonAddText"+position,
+        function() { controlAddText(position) }, "+Text")
+    div.appendChild(addText)
+    const addCaption = documentAddButton("buttonAddCaption"+position,
+        function() { controlAddCaption(position) }, "+Caption")
+    div.appendChild(addCaption)
+    const addCounter = documentAddButton("buttonAddCounter"+position,
+        function() { controlAddCounter(position) }, "+Counter")
+    div.appendChild(addCounter)
+    const switchWidgets = documentAddButton("buttonSwitch"+position,
+        function() { controlSwitchWidgets(position) }, "/\\ Switch \\/")
+    div.appendChild(switchWidgets)
+    const deletePrevious = documentAddButton("buttonDeletePrevious"+position,
+        function() { controlDeletePrevious(position) }, "/\\ Delete")
+    div.appendChild(deletePrevious)
+
+    const hr = document.createElement("hr")
+    div.appendChild(hr)
+
+    document.body.appendChild(div)
+}
 
 function renderWidgets(widgets: any[]) {
-    while (document.firstChild) {
-        document.removeChild(document.firstChild)
-    }
-
-    // renderMenuDiv()
-
+    renderMenuDiv()
     let position = 0
     for (let widget of widgets) {
         if (widget.type == "canvas") {
             renderCanvasDiv(widget)
         } else if (widget.type == "text") {
-            // renderTextDiv(widget)
+            renderTextDiv(widget)
+        } else if (widget.type == "counter") {
+            renderCounterDiv(widget)
+        } else if (widget.type == "caption") {
+            renderCaptionDiv(widget)
         }
-        // renderButtonsDiv(position)
+        renderControlDiv(position)
         position++
     }
 }
+
+renderWidgets(gWidgets)

@@ -622,7 +622,7 @@ function counterSwitchBr(id) {
 function renderCounterDiv(widget) {
     var id = widget.id;
     var div = documentAddDiv("divCounter" + id);
-    var labelId = documentAddLabel("counterId" + id, "ID: ");
+    var labelId = documentAddLabel("counterId" + id, "Counter ID: ");
     var inputId = documentAddTextlineInput("counterId" + id, "counterId", widget.data.id, "2");
     inputId.onkeyup = function () { counterChangeId(id); };
     div.appendChild(labelId);
@@ -636,7 +636,7 @@ function renderCounterDiv(widget) {
 function renderCaptionDiv(widget) {
     var id = widget.id;
     var div = documentAddDiv("divCaption" + id);
-    var levelLabel = documentAddLabel("selectLevel" + id, "Level:");
+    var levelLabel = documentAddLabel("selectLevel" + id, "Caption level:");
     var options = ["1", "2", "3", "4", "5", "6"];
     var select = documentAddSelect("selectLevel" + id, "level", options);
     select.value = widget.data.level;
@@ -809,16 +809,44 @@ function renderCanvasDiv(widget) {
     document.body.appendChild(div);
     canvasDrawPointsOnIt(id, widget.data.pointsHistory);
 }
-renderCanvasDiv(gWidgets[0]);
-renderCanvasDiv(gWidgets[1]);
-renderTextDiv(gWidgets[2]);
-renderCaptionDiv(gWidgets[3]);
-renderCounterDiv(gWidgets[4]);
+function menuLoad() { }
+function menuSave() { }
+function renderMenuDiv() {
+    var div = documentAddDiv("divMenu");
+    var loadButton = documentAddButton("loadButton", function () { menuLoad(); }, "Load...");
+    div.appendChild(loadButton);
+    var saveButton = documentAddButton("saveButton", function () { menuSave(); }, "Save...");
+    div.appendChild(saveButton);
+    var hr = document.createElement("hr");
+    div.appendChild(hr);
+    document.body.appendChild(div);
+}
+function controlAddCanvas(position) { }
+function controlAddText(position) { }
+function controlAddCaption(position) { }
+function controlAddCounter(position) { }
+function controlSwitchWidgets(position) { }
+function controlDeletePrevious(position) { }
+function renderControlDiv(position) {
+    var div = documentAddDiv("divControl" + position);
+    var addCanvas = documentAddButton("buttonAddCanvas" + position, function () { controlAddCanvas(position); }, "+Canvas");
+    div.appendChild(addCanvas);
+    var addText = documentAddButton("buttonAddText" + position, function () { controlAddText(position); }, "+Text");
+    div.appendChild(addText);
+    var addCaption = documentAddButton("buttonAddCaption" + position, function () { controlAddCaption(position); }, "+Caption");
+    div.appendChild(addCaption);
+    var addCounter = documentAddButton("buttonAddCounter" + position, function () { controlAddCounter(position); }, "+Counter");
+    div.appendChild(addCounter);
+    var switchWidgets = documentAddButton("buttonSwitch" + position, function () { controlSwitchWidgets(position); }, "/\\ Switch \\/");
+    div.appendChild(switchWidgets);
+    var deletePrevious = documentAddButton("buttonDeletePrevious" + position, function () { controlDeletePrevious(position); }, "/\\ Delete");
+    div.appendChild(deletePrevious);
+    var hr = document.createElement("hr");
+    div.appendChild(hr);
+    document.body.appendChild(div);
+}
 function renderWidgets(widgets) {
-    while (document.firstChild) {
-        document.removeChild(document.firstChild);
-    }
-    // renderMenuDiv()
+    renderMenuDiv();
     var position = 0;
     for (var _i = 0, widgets_1 = widgets; _i < widgets_1.length; _i++) {
         var widget = widgets_1[_i];
@@ -826,9 +854,16 @@ function renderWidgets(widgets) {
             renderCanvasDiv(widget);
         }
         else if (widget.type == "text") {
-            // renderTextDiv(widget)
+            renderTextDiv(widget);
         }
-        // renderButtonsDiv(position)
+        else if (widget.type == "counter") {
+            renderCounterDiv(widget);
+        }
+        else if (widget.type == "caption") {
+            renderCaptionDiv(widget);
+        }
+        renderControlDiv(position);
         position++;
     }
 }
+renderWidgets(gWidgets);
