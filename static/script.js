@@ -14,6 +14,13 @@ socket.on('custom_event_4', function () {
 function button_function() {
     socket.emit('custom_event_1', { data: 'I\'m connected!' });
 }
+socket.on('broadcast_to_client', function (data) {
+    alert("AAAA");
+    alert(data);
+    alert(data[0]);
+    gWidgets = data;
+    renderWidgets();
+});
 //////////////////////////////
 // GLOBAL VARIABLES SECTION //
 // All global variables start with "g"
@@ -111,6 +118,67 @@ function getWidgetIndexById(id) {
         index++;
     }
     return index;
+}
+function getUniqueId() {
+    var id = 0;
+    var isNotUnique = true;
+    while (isNotUnique) {
+        id++;
+        isNotUnique = false;
+        for (var i = 0; i < gWidgets.length; i++) {
+            if (gWidgets[i].id == id.toString()) {
+                isNotUnique = true;
+            }
+        }
+    }
+    return id.toString();
+}
+function getRawCanvas() {
+    return {
+        id: getUniqueId(),
+        type: "canvas",
+        data: {
+            pointsHistory: [],
+            isLocked: false,
+            isWithPressure: false
+        }
+    };
+}
+function getRawText() {
+    return {
+        id: getUniqueId(),
+        type: "text",
+        data: {
+            text: "",
+            bordercolor: "none",
+            font: "standard"
+        }
+    };
+}
+function getRawCaption() {
+    return {
+        id: getUniqueId(),
+        type: "caption",
+        data: {
+            text: "",
+            id: "",
+            level: "1"
+        }
+    };
+}
+function getRawCounter() {
+    return {
+        id: getUniqueId(),
+        type: "counter",
+        data: {
+            id: "",
+            br: false
+        }
+    };
+}
+function widgetsAddWidgetAtPosition(position, widget) {
+    gWidgets.splice(position, 0, widget);
+    renderWidgets();
 }
 // POINT DEFINITION SECTION //
 /**
@@ -291,22 +359,34 @@ function documentAddTextlineInput(id, name, value, size) {
     input.name = name;
     return input;
 }
-// CAPTION WIDGET FUNCTIONS SECTION //
-function captionChangeLevel(id) {
-    var select = document.getElementById("selectLevel" + id);
-    var level = select.value;
-    var index = getWidgetIndexById(id);
-    gWidgets[index].data.level = level;
+// CONTROL WIDGET FUNCTION SECTION //
+function controlAddCanvas(position) {
+    widgetsAddWidgetAtPosition(position, getRawCanvas());
 }
-function captionChangeId(id) {
-    var input = document.getElementById("captionId" + id);
-    var index = getWidgetIndexById(id);
-    gWidgets[index].data.id = input.value;
+function controlAddCaption(position) {
+    widgetsAddWidgetAtPosition(position, getRawCaption());
 }
-function captionChangeText(id) {
-    var input = document.getElementById("captionText" + id);
-    var index = getWidgetIndexById(id);
-    gWidgets[index].data.text = input.value;
+function controlAddCounter(position) {
+    widgetsAddWidgetAtPosition(position, getRawCounter());
+}
+function controlBroadcast() {
+    socket.emit("broadcastToServer", gWidgets);
+}
+function controlDeletePrevious(position) {
+    gWidgets.splice(position - 1, 1);
+    renderWidgets();
+}
+function controlAddText(position) {
+    widgetsAddWidgetAtPosition(position, getRawText());
+}
+function controlSwitchWidgets(position) {
+    if ((position >= gWidgets.length) || (position == 0)) {
+        return;
+    }
+    var tempWidget = gWidgets[position];
+    gWidgets[position] = gWidgets[position - 1];
+    gWidgets[position - 1] = tempWidget;
+    renderWidgets();
 }
 // CANVAS WIDGET FUNCTIONS SECTION //
 /**
@@ -495,7 +575,132 @@ function canvasResize(id) {
     var index = getWidgetIndexById(id);
     canvasDrawPointsOnIt(id, gWidgets[index].data.pointsHistory);
 }
-// TEXTAREA WIDGET FUNCTIONS SECTION //
+// CAPTION WIDGET FUNCTIONS SECTION //
+/**
+ * Changes the caption-associated Widget's level to the
+ * current value of the level select element.
+ *
+ * @param id The caption's base ID
+ */
+function captionChangeLevel(id) {
+    var select = document.getElementById("selectLevel" + id);
+    var level = select.value;
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.level = level;
+}
+/**
+ * Changes the caption-associated Widget's data.id to the
+ * current value of the associated ID text line input.
+ *
+ * @param id The caption's base ID, which is not the data.id value
+ */
+function captionChangeId(id) {
+    var input = document.getElementById("captionId" + id);
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.id = input.value;
+}
+/**
+ * Changes the caption-associated Widget's text value to the
+ * current value of the associated text line input element.
+ *
+ * @param id The caption's base ID
+ */
+function captionChangeText(id) {
+    var input = document.getElementById("captionText" + id);
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.text = input.value;
+}
+// COUNTER WIDGET FUNCTIONS SECTION //
+/**
+ * Changes the counter Widget's data.id value to the current value
+ * of the associated text label element's value.
+ *
+ * @param id The counter's base ID, which is not the data.id value
+ */
+function counterChangeId(id) {
+    var input = document.getElementById("counterId" + id);
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.id = input.value;
+}
+/**
+ * Switches the counter Widget instance's br boolean value
+ * to the value of the associated checkbox.
+ *
+ * @param id THe counter's base ID
+ */
+function counterSwitchBr(id) {
+    var checkbox = document.getElementById("boxBr" + id);
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.br = checkbox.checked;
+}
+// TEXT WIDGET FUNCTIONS SECTION //
+/**
+ * Add the symbol(s) "*" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. In Markdown, two "*" stand for bold
+ * text.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddBold(id) {
+    textareaInsert(id, "*", true);
+}
+/**
+ * Add the symbol(s) "_" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. In Markdown, two "_" stand for italic
+ * text.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddItalic(id) {
+    textareaInsert(id, "_", true);
+}
+/**
+ * Add the symbols "[Text](URL)" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. The symbols are a general expression of
+ * Markdown's description of a hyperlink.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddHyperlink(id) {
+    textareaInsert(id, "[Text](URL)", false);
+}
+/**
+ * Add the symbols "{{{ID}}}" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. The symbols are our general expression
+ * for an anchor reference.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddAnchor(id) {
+    textareaInsert(id, "{{{ID}}}", false);
+}
+/**
+ * Add the symbols "{{{ID}}}" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. The symbols are our general expression
+ * for a counter reference.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddCounter(id) {
+    textareaInsert(id, "{{{{ID}}}}", false);
+}
+/**
+ * Add the symbols "<br>" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. The symbols are HTML's expression
+ * for a newline without an extra space for
+ * a new paragraph.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddNewline(id) {
+    textareaInsert(id, "<br>", false);
+}
 function textareaInsert(id, insert, multi) {
     var textarea = document.getElementById("textarea" + id);
     var selectionStart = textarea.selectionStart;
@@ -514,24 +719,6 @@ function textareaInsert(id, insert, multi) {
     textarea.value = newtext;
     textareaUpdateWidgetText(id);
 }
-function textareaAddBold(id) {
-    textareaInsert(id, "*", true);
-}
-function textareaAddItalic(id) {
-    textareaInsert(id, "_", true);
-}
-function textareaAddHyperlink(id) {
-    textareaInsert(id, "[Text](URL)", false);
-}
-function textareaAddAnchor(id) {
-    textareaInsert(id, "{{{ID}}}", false);
-}
-function textareaAddCounter(id) {
-    textareaInsert(id, "{{{{ID}}}}", false);
-}
-function textareaAddNewline(id) {
-    textareaInsert(id, "<br>", false);
-}
 function textareaSetBordercolor(id, color) {
     var index = getWidgetIndexById(id);
     gWidgets[index].data.bordercolor = color;
@@ -543,118 +730,29 @@ function textareaSetBordercolor(id, color) {
         textarea.style.border = "1px solid " + color;
     }
 }
+/**
+ * Sets the text Widget's font value to the given
+ * font.
+ *
+ * @param id The text widget's base ID
+ * @param font The font which will be set for the text widget
+ */
 function textareaSetFont(id, font) {
     var index = getWidgetIndexById(id);
     gWidgets[index].data.font = font;
 }
+/**
+ * Changes the text widget's text value to the current
+ * input in the associated textarea element.
+ *
+ * @param id The text widget's base ID
+ */
 function textareaUpdateWidgetText(id) {
     var index = getWidgetIndexById(id);
     var textarea = document.getElementById("textarea" + id);
     gWidgets[index].data.text = textarea.value;
 }
 // RENDER FUNCTIONS SECTION //
-function renderTextDiv(widget) {
-    var id = widget.id;
-    var div = documentAddDiv("divText" + id);
-    // Border color radios
-    var bordercolorForm = documentAddForm("textBordercolor" + id, "dialog");
-    var isNone = widget.data.bordercolor == "none";
-    var radioNone = documentAddRadioInput("radioNone" + id, "bordercolor", "none", isNone, function () { textareaSetBordercolor(id, "none"); });
-    var labelNone = documentAddLabel("radioNone" + id, "None");
-    bordercolorForm.appendChild(radioNone);
-    bordercolorForm.appendChild(labelNone);
-    var isBlack = widget.data.bordercolor == "black";
-    var radioBlack = documentAddRadioInput("radioBlack" + id, "bordercolor", "black", isBlack, function () { textareaSetBordercolor(id, "none"); });
-    var labelBlack = documentAddLabel("radioNone" + id, "Black");
-    bordercolorForm.appendChild(radioBlack);
-    bordercolorForm.appendChild(labelBlack);
-    div.appendChild(bordercolorForm);
-    // Font radios
-    var fontForm = documentAddForm("textBordercolor" + id, "dialog");
-    var isStandard = widget.data.font == "standard";
-    var radioStandard = documentAddRadioInput("radioStandard" + id, "font", "standard", isStandard, function () { textareaSetFont(id, "none"); });
-    var labelStandard = documentAddLabel("radioStandard" + id, "Standard");
-    fontForm.appendChild(radioStandard);
-    fontForm.appendChild(labelStandard);
-    div.appendChild(fontForm);
-    var isMonospaced = widget.data.font == "monospaced";
-    var radioMonospaced = documentAddRadioInput("radioMonospaced" + id, "font", "monospaced", isMonospaced, function () { textareaSetFont(id, "monospaced"); });
-    var labelMonospaced = documentAddLabel("radioMonospaced" + id, "Monospaced");
-    fontForm.appendChild(radioMonospaced);
-    fontForm.appendChild(labelMonospaced);
-    div.appendChild(fontForm);
-    // Text addition buttons
-    var buttonBold = documentAddButton("buttonBold" + id, function () { textareaAddBold(id); }, "Bold");
-    div.appendChild(buttonBold);
-    var buttonItalic = documentAddButton("buttonItalic" + id, function () { textareaAddItalic(id); }, "Italic");
-    div.appendChild(buttonItalic);
-    var buttonHyperlink = documentAddButton("buttonHyperlink" + id, function () { textareaAddHyperlink(id); }, "Hyperlink");
-    div.appendChild(buttonHyperlink);
-    var buttonAnchor = documentAddButton("buttonAnchor" + id, function () { textareaAddAnchor(id); }, "Anchor");
-    div.appendChild(buttonAnchor);
-    var buttonCounter = documentAddButton("buttonCounter" + id, function () { textareaAddCounter(id); }, "Counter");
-    div.appendChild(buttonCounter);
-    var buttonNewline = documentAddButton("buttonNewline" + id, function () { textareaAddNewline(id); }, "Newline");
-    div.appendChild(buttonNewline);
-    // Newline after buttons
-    var br = document.createElement("br");
-    div.appendChild(br);
-    // The actual textarea
-    var textarea = documentAddTextarea("textarea" + id, widget.data.text, 75, 10);
-    div.appendChild(textarea);
-    // Events
-    textarea.onkeyup = function () { textareaUpdateWidgetText(id); };
-    document.body.appendChild(div);
-    textareaUpdateWidgetText(id);
-}
-function counterChangeId(id) {
-    var input = document.getElementById("counterId" + id);
-    alert(input.value);
-    var index = getWidgetIndexById(id);
-    gWidgets[index].data.id = input.value;
-}
-function counterSwitchBr(id) {
-    var checkbox = document.getElementById("boxBr" + id);
-    var index = getWidgetIndexById(id);
-    alert(checkbox.checked);
-    gWidgets[index].data.br = checkbox.checked;
-}
-function renderCounterDiv(widget) {
-    var id = widget.id;
-    var div = documentAddDiv("divCounter" + id);
-    var labelId = documentAddLabel("counterId" + id, "Counter ID: ");
-    var inputId = documentAddTextlineInput("counterId" + id, "counterId", widget.data.id, "2");
-    inputId.onkeyup = function () { counterChangeId(id); };
-    div.appendChild(labelId);
-    div.appendChild(inputId);
-    var checkboxBr = documentAddCheckboxInput("boxBr" + id, "br", widget.data.br, function () { counterSwitchBr(id); });
-    var labelBr = documentAddLabel("boxBr" + id, "Newline?");
-    div.appendChild(checkboxBr);
-    div.appendChild(labelBr);
-    document.body.appendChild(div);
-}
-function renderCaptionDiv(widget) {
-    var id = widget.id;
-    var div = documentAddDiv("divCaption" + id);
-    var levelLabel = documentAddLabel("selectLevel" + id, "Caption level:");
-    var options = ["1", "2", "3", "4", "5", "6"];
-    var select = documentAddSelect("selectLevel" + id, "level", options);
-    select.value = widget.data.level;
-    select.onchange = function () { captionChangeLevel(id); };
-    div.appendChild(levelLabel);
-    div.appendChild(select);
-    var labelId = documentAddLabel("captionId" + id, "ID: ");
-    var inputId = documentAddTextlineInput("captionId" + id, "captionId", widget.data.id, "2");
-    inputId.onkeyup = function () { captionChangeId(id); };
-    div.appendChild(labelId);
-    div.appendChild(inputId);
-    var labelText = documentAddLabel("text" + id, "Text: ");
-    var inputText = documentAddTextlineInput("captionText" + id, "captionText", widget.data.text, "25");
-    inputText.onkeyup = function () { captionChangeText(id); };
-    div.appendChild(labelText);
-    div.appendChild(inputText);
-    document.body.appendChild(div);
-}
 /**
  * Renders the canvas with the given associated widget data
  * (which includes e.g. the ID, points etc.) in the form of
@@ -684,8 +782,8 @@ function renderCanvasDiv(widget) {
     var widthInput = documentAddTextlineInput("canvasWidth" + id, "canvasWidth", "500", "2");
     sizeForm.appendChild(widthLabel);
     sizeForm.appendChild(widthInput);
-    var heightLabel = documentAddLabel("canvasHeight" + id, "Height: ");
-    var heightInput = documentAddTextlineInput("canvasHeight" + id, "canvasHeight", "500", "2");
+    var heightLabel = documentAddLabel("canvasHeight" + id, " Height: ");
+    var heightInput = documentAddTextlineInput("canvasHeight" + id, "canvasHeight", "50", "2");
     sizeForm.appendChild(heightLabel);
     sizeForm.appendChild(heightInput);
     var resizeButton = documentAddButton("buttonResize" + id, function () { canvasResize(id); }, "Resize");
@@ -768,7 +866,7 @@ function renderCanvasDiv(widget) {
     var canvas = document.createElement("canvas");
     canvas.id = "canvas" + id;
     canvas.width = 500;
-    canvas.height = 500;
+    canvas.height = 50;
     canvas.style.border = "1px solid black";
     canvas.textContent = "Unfortunately, your browser does not support canvas elements.";
     // Touch & Mouse event associations
@@ -809,24 +907,42 @@ function renderCanvasDiv(widget) {
     document.body.appendChild(div);
     canvasDrawPointsOnIt(id, widget.data.pointsHistory);
 }
-function menuLoad() { }
-function menuSave() { }
-function renderMenuDiv() {
-    var div = documentAddDiv("divMenu");
-    var loadButton = documentAddButton("loadButton", function () { menuLoad(); }, "Load...");
-    div.appendChild(loadButton);
-    var saveButton = documentAddButton("saveButton", function () { menuSave(); }, "Save...");
-    div.appendChild(saveButton);
-    var hr = document.createElement("hr");
-    div.appendChild(hr);
+function renderCaptionDiv(widget) {
+    var id = widget.id;
+    var div = documentAddDiv("divCaption" + id);
+    var levelLabel = documentAddLabel("selectLevel" + id, "Caption level:");
+    var options = ["1", "2", "3", "4", "5", "6"];
+    var select = documentAddSelect("selectLevel" + id, "level", options);
+    select.value = widget.data.level;
+    select.onchange = function () { captionChangeLevel(id); };
+    div.appendChild(levelLabel);
+    div.appendChild(select);
+    var labelId = documentAddLabel("captionId" + id, " ID: ");
+    var inputId = documentAddTextlineInput("captionId" + id, "captionId", widget.data.id, "2");
+    inputId.onkeyup = function () { captionChangeId(id); };
+    div.appendChild(labelId);
+    div.appendChild(inputId);
+    var labelText = documentAddLabel("captionText" + id, " Text: ");
+    var inputText = documentAddTextlineInput("captionText" + id, "captionText", widget.data.text, "25");
+    inputText.onkeyup = function () { captionChangeText(id); };
+    div.appendChild(labelText);
+    div.appendChild(inputText);
     document.body.appendChild(div);
 }
-function controlAddCanvas(position) { }
-function controlAddText(position) { }
-function controlAddCaption(position) { }
-function controlAddCounter(position) { }
-function controlSwitchWidgets(position) { }
-function controlDeletePrevious(position) { }
+function renderCounterDiv(widget) {
+    var id = widget.id;
+    var div = documentAddDiv("divCounter" + id);
+    var labelId = documentAddLabel("counterId" + id, "Counter ID: ");
+    var inputId = documentAddTextlineInput("counterId" + id, "counterId", widget.data.id, "2");
+    inputId.onkeyup = function () { counterChangeId(id); };
+    div.appendChild(labelId);
+    div.appendChild(inputId);
+    var checkboxBr = documentAddCheckboxInput("boxBr" + id, "br", widget.data.br, function () { counterSwitchBr(id); });
+    var labelBr = documentAddLabel("boxBr" + id, "Newline?");
+    div.appendChild(checkboxBr);
+    div.appendChild(labelBr);
+    document.body.appendChild(div);
+}
 function renderControlDiv(position) {
     var div = documentAddDiv("divControl" + position);
     var addCanvas = documentAddButton("buttonAddCanvas" + position, function () { controlAddCanvas(position); }, "+Canvas");
@@ -841,15 +957,90 @@ function renderControlDiv(position) {
     div.appendChild(switchWidgets);
     var deletePrevious = documentAddButton("buttonDeletePrevious" + position, function () { controlDeletePrevious(position); }, "/\\ Delete");
     div.appendChild(deletePrevious);
+    var broadcast = documentAddButton("buttonBroadcast" + position, function () { controlBroadcast(); }, "BROADCAST");
+    div.appendChild(broadcast);
     var hr = document.createElement("hr");
     div.appendChild(hr);
     document.body.appendChild(div);
 }
-function renderWidgets(widgets) {
+function menuLoad() {
+    socket.emit("load", "");
+}
+function menuSave() {
+    socket.emit("save", gWidgets);
+}
+function renderMenuDiv() {
+    var div = documentAddDiv("divMenu");
+    var loadButton = documentAddButton("loadButton", function () { menuLoad(); }, "Load...");
+    div.appendChild(loadButton);
+    var saveButton = documentAddButton("saveButton", function () { menuSave(); }, "Save...");
+    div.appendChild(saveButton);
+    var hr = document.createElement("hr");
+    div.appendChild(hr);
+    document.body.appendChild(div);
+}
+function renderTextDiv(widget) {
+    var id = widget.id;
+    var div = documentAddDiv("divText" + id);
+    // Border color radios
+    var bordercolorForm = documentAddForm("textBordercolor" + id, "dialog");
+    var isNone = widget.data.bordercolor == "none";
+    var radioNone = documentAddRadioInput("radioNone" + id, "bordercolor", "none", isNone, function () { textareaSetBordercolor(id, "none"); });
+    var labelNone = documentAddLabel("radioNone" + id, "None");
+    bordercolorForm.appendChild(radioNone);
+    bordercolorForm.appendChild(labelNone);
+    var isBlack = widget.data.bordercolor == "black";
+    var radioBlack = documentAddRadioInput("radioBlack" + id, "bordercolor", "black", isBlack, function () { textareaSetBordercolor(id, "none"); });
+    var labelBlack = documentAddLabel("radioBlack" + id, "Black");
+    bordercolorForm.appendChild(radioBlack);
+    bordercolorForm.appendChild(labelBlack);
+    div.appendChild(bordercolorForm);
+    // Font radios
+    var fontForm = documentAddForm("textBordercolor" + id, "dialog");
+    var isStandard = widget.data.font == "standard";
+    var radioStandard = documentAddRadioInput("radioStandard" + id, "font", "standard", isStandard, function () { textareaSetFont(id, "none"); });
+    var labelStandard = documentAddLabel("radioStandard" + id, "Standard");
+    fontForm.appendChild(radioStandard);
+    fontForm.appendChild(labelStandard);
+    div.appendChild(fontForm);
+    var isMonospaced = widget.data.font == "monospaced";
+    var radioMonospaced = documentAddRadioInput("radioMonospaced" + id, "font", "monospaced", isMonospaced, function () { textareaSetFont(id, "monospaced"); });
+    var labelMonospaced = documentAddLabel("radioMonospaced" + id, "Monospaced");
+    fontForm.appendChild(radioMonospaced);
+    fontForm.appendChild(labelMonospaced);
+    div.appendChild(fontForm);
+    // Text addition buttons
+    var buttonBold = documentAddButton("buttonBold" + id, function () { textareaAddBold(id); }, "Bold");
+    div.appendChild(buttonBold);
+    var buttonItalic = documentAddButton("buttonItalic" + id, function () { textareaAddItalic(id); }, "Italic");
+    div.appendChild(buttonItalic);
+    var buttonHyperlink = documentAddButton("buttonHyperlink" + id, function () { textareaAddHyperlink(id); }, "Hyperlink");
+    div.appendChild(buttonHyperlink);
+    var buttonAnchor = documentAddButton("buttonAnchor" + id, function () { textareaAddAnchor(id); }, "Anchor");
+    div.appendChild(buttonAnchor);
+    var buttonCounter = documentAddButton("buttonCounter" + id, function () { textareaAddCounter(id); }, "Counter");
+    div.appendChild(buttonCounter);
+    var buttonNewline = documentAddButton("buttonNewline" + id, function () { textareaAddNewline(id); }, "Newline");
+    div.appendChild(buttonNewline);
+    // Newline after buttons
+    var br = document.createElement("br");
+    div.appendChild(br);
+    // The actual textarea
+    var labelTextarea = documentAddLabel("textarea" + id, "");
+    var textarea = documentAddTextarea("textarea" + id, widget.data.text, 75, 10);
+    div.appendChild(labelTextarea);
+    div.appendChild(textarea);
+    // Events
+    textarea.onkeyup = function () { textareaUpdateWidgetText(id); };
+    document.body.appendChild(div);
+    textareaUpdateWidgetText(id);
+}
+function renderWidgets() {
+    document.body.innerHTML = "";
     renderMenuDiv();
-    var position = 0;
-    for (var _i = 0, widgets_1 = widgets; _i < widgets_1.length; _i++) {
-        var widget = widgets_1[_i];
+    var position = 1;
+    for (var _i = 0, gWidgets_2 = gWidgets; _i < gWidgets_2.length; _i++) {
+        var widget = gWidgets_2[_i];
         if (widget.type == "canvas") {
             renderCanvasDiv(widget);
         }
@@ -866,4 +1057,10 @@ function renderWidgets(widgets) {
         position++;
     }
 }
-renderWidgets(gWidgets);
+renderWidgets();
+for (var _i = 0, _a = ["touchend", "touchleave", "mouseup"]; _i < _a.length; _i++) {
+    var events = _a[_i];
+    document.body.addEventListener(events, function (event) {
+        //
+    });
+}

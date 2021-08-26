@@ -26,6 +26,11 @@ function button_function() {
     socket.emit('custom_event_1', {data: 'I\'m connected!'})
 }
 
+socket.on('broadcast_to_client', function(data: any) {
+    gWidgets = data
+    renderWidgets()
+})
+
 
 //////////////////////////////
 // GLOBAL VARIABLES SECTION //
@@ -107,6 +112,8 @@ let gWidgets = [
 ]
 
 
+
+
 // GLOBAL WIDGET FUNCTION SECTION //
 /**
  * Returns the index (i.e., 0 up to the length of the global widgets variable)
@@ -126,6 +133,75 @@ let gWidgets = [
     }
     return index
 }
+
+function getUniqueId(): string {
+    let id = 0
+    let isNotUnique = true
+    while (isNotUnique) {
+        id++
+        isNotUnique = false
+        for(let i=0; i<gWidgets.length; i++) {
+            if (gWidgets[i].id == id.toString()) {
+                isNotUnique = true
+            }
+        }
+    }
+    return id.toString()
+}
+
+function getRawCanvas(): any {
+    return {
+        id: getUniqueId(),
+        type: "canvas",
+        data: {
+            pointsHistory: [],
+            isLocked: false,
+            isWithPressure: false,
+        },
+    }
+}
+
+function getRawText(): any {
+    return {
+        id: getUniqueId(),
+        type: "text",
+        data: {
+            text: "",
+            bordercolor: "none",
+            font: "standard",
+        }
+    }
+}
+
+function getRawCaption(): any {
+    return {
+        id: getUniqueId(),
+        type: "caption",
+        data: {
+            text: "",
+            id: "",
+            level: "1",
+        }
+    }
+}
+
+function getRawCounter(): any {
+    return {
+        id: getUniqueId(),
+        type: "counter",
+        data: {
+            id: "",
+            br: false,
+        }
+    }
+}
+
+function widgetsAddWidgetAtPosition(position: number, widget: any) {
+    gWidgets.splice(position, 0, widget)
+    renderWidgets()
+}
+
+
 
 
 // POINT DEFINITION SECTION //
@@ -157,6 +233,8 @@ function getPoint(x: number, y: number, lineWidth: number, color: string, hasVis
         hasVisibleLineToIt: hasVisibleLineToIt,
     }
 }
+
+
 
 
 // DOCUMENT-AFFENCTING FUNCTIONS SECTION //
@@ -318,25 +396,46 @@ function documentAddTextlineInput(id: string, name: string, value: string, size:
     return input
 }
 
-// CAPTION WIDGET FUNCTIONS SECTION //
-function captionChangeLevel(id: string) {
-    const select: any = document.getElementById("selectLevel"+id)
-    const level = select.value
-    const index = getWidgetIndexById(id)
-    gWidgets[index].data.level = level
+
+
+
+// CONTROL WIDGET FUNCTION SECTION //
+function controlAddCanvas(position: number) {
+    widgetsAddWidgetAtPosition(position, getRawCanvas())
 }
 
-function captionChangeId(id: string) {
-    const input: any = document.getElementById("captionId"+id)
-    const index = getWidgetIndexById(id)
-    gWidgets[index].data.id = input.value
+function controlAddCaption(position: number) {
+    widgetsAddWidgetAtPosition(position, getRawCaption())
 }
 
-function captionChangeText(id: string) {
-    const input: any = document.getElementById("captionText"+id)
-    const index = getWidgetIndexById(id)
-    gWidgets[index].data.text = input.value
+function controlAddCounter(position: number) {
+    widgetsAddWidgetAtPosition(position, getRawCounter())
 }
+
+function controlBroadcast() {
+    socket.emit("broadcastToServer", gWidgets)
+}
+
+function controlDeletePrevious(position: number) {
+    gWidgets.splice(position-1, 1)
+    renderWidgets()
+}
+
+function controlAddText(position: number) {
+    widgetsAddWidgetAtPosition(position, getRawText())
+}
+
+function controlSwitchWidgets(position: number) {
+    if ((position >= gWidgets.length) || (position == 0)) {
+        return
+    }
+    let tempWidget = gWidgets[position]
+    gWidgets[position] = gWidgets[position-1]
+    gWidgets[position-1] = tempWidget
+    renderWidgets()
+}
+
+
 
 
 // CANVAS WIDGET FUNCTIONS SECTION //
@@ -356,7 +455,7 @@ function captionChangeText(id: string) {
  * start point of a new line. If yes, the global start point variable
  * will be set to this Point
  */
-function canvasAddPoint(event: any, id: string, hasVisibleLineToIt: boolean, setStartPoint: boolean) {
+ function canvasAddPoint(event: any, id: string, hasVisibleLineToIt: boolean, setStartPoint: boolean) {
     const canvas: any = document.getElementById("canvas"+id)
     const index = getWidgetIndexById(id)
 
@@ -539,7 +638,151 @@ function canvasResize(id: string) {
 }
 
 
-// TEXTAREA WIDGET FUNCTIONS SECTION //
+
+
+// CAPTION WIDGET FUNCTIONS SECTION //
+/**
+ * Changes the caption-associated Widget's level to the
+ * current value of the level select element.
+ *
+ * @param id The caption's base ID
+ */
+function captionChangeLevel(id: string) {
+    const select: any = document.getElementById("selectLevel"+id)
+    const level = select.value
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.level = level
+}
+
+/**
+ * Changes the caption-associated Widget's data.id to the
+ * current value of the associated ID text line input.
+ *
+ * @param id The caption's base ID, which is not the data.id value
+ */
+function captionChangeId(id: string) {
+    const input: any = document.getElementById("captionId"+id)
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.id = input.value
+}
+
+/**
+ * Changes the caption-associated Widget's text value to the
+ * current value of the associated text line input element.
+ *
+ * @param id The caption's base ID
+ */
+function captionChangeText(id: string) {
+    const input: any = document.getElementById("captionText"+id)
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.text = input.value
+}
+
+
+
+
+// COUNTER WIDGET FUNCTIONS SECTION //
+/**
+ * Changes the counter Widget's data.id value to the current value
+ * of the associated text label element's value.
+ *
+ * @param id The counter's base ID, which is not the data.id value
+ */
+function counterChangeId(id: string) {
+    const input: any = document.getElementById("counterId"+id)
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.id = input.value
+}
+
+/**
+ * Switches the counter Widget instance's br boolean value
+ * to the value of the associated checkbox.
+ *
+ * @param id THe counter's base ID
+ */
+function counterSwitchBr(id: string) {
+    const checkbox: any = document.getElementById("boxBr"+id)
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.br = checkbox.checked
+}
+
+
+
+
+// TEXT WIDGET FUNCTIONS SECTION //
+/**
+ * Add the symbol(s) "*" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. In Markdown, two "*" stand for bold
+ * text.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddBold(id: string) {
+    textareaInsert(id, "*", true)
+}
+
+/**
+ * Add the symbol(s) "_" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. In Markdown, two "_" stand for italic
+ * text.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddItalic(id: string) {
+    textareaInsert(id, "_", true)
+}
+
+/**
+ * Add the symbols "[Text](URL)" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. The symbols are a general expression of
+ * Markdown's description of a hyperlink.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddHyperlink(id: string) {
+    textareaInsert(id, "[Text](URL)", false)
+}
+
+/**
+ * Add the symbols "{{{ID}}}" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. The symbols are our general expression
+ * for an anchor reference.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddAnchor(id: string) {
+    textareaInsert(id, "{{{ID}}}", false)
+}
+
+/**
+ * Add the symbols "{{{ID}}}" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. The symbols are our general expression
+ * for a counter reference.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddCounter(id: string) {
+    textareaInsert(id, "{{{{ID}}}}", false)
+}
+
+/**
+ * Add the symbols "<br>" to the text widget's
+ * textarea, according to the textareaInsert
+ * logic. The symbols are HTML's expression
+ * for a newline without an extra space for
+ * a new paragraph.
+ *
+ * @param id The text widget's base ID
+ */
+function textareaAddNewline(id: string) {
+    textareaInsert(id, "<br>", false)
+}
+
 function textareaInsert(id: string, insert: string, multi: boolean) {
     const textarea: any = document.getElementById("textarea"+id)
     const selectionStart = textarea.selectionStart
@@ -559,30 +802,6 @@ function textareaInsert(id: string, insert: string, multi: boolean) {
     textareaUpdateWidgetText(id)
 }
 
-function textareaAddBold(id: string) {
-    textareaInsert(id, "*", true)
-}
-
-function textareaAddItalic(id: string) {
-    textareaInsert(id, "_", true)
-}
-
-function textareaAddHyperlink(id: string) {
-    textareaInsert(id, "[Text](URL)", false)
-}
-
-function textareaAddAnchor(id: string) {
-    textareaInsert(id, "{{{ID}}}", false)
-}
-
-function textareaAddCounter(id: string) {
-    textareaInsert(id, "{{{{ID}}}}", false)
-}
-
-function textareaAddNewline(id: string) {
-    textareaInsert(id, "<br>", false)
-}
-
 function textareaSetBordercolor(id: string, color: string) {
     let index = getWidgetIndexById(id)
     gWidgets[index].data.bordercolor = color
@@ -594,169 +813,33 @@ function textareaSetBordercolor(id: string, color: string) {
     }
 }
 
+/**
+ * Sets the text Widget's font value to the given
+ * font.
+ *
+ * @param id The text widget's base ID
+ * @param font The font which will be set for the text widget
+ */
 function textareaSetFont(id: string, font: string) {
     let index = getWidgetIndexById(id)
     gWidgets[index].data.font = font
 }
 
+/**
+ * Changes the text widget's text value to the current
+ * input in the associated textarea element.
+ *
+ * @param id The text widget's base ID
+ */
 function textareaUpdateWidgetText(id: string) {
     let index = getWidgetIndexById(id)
     const textarea: any = document.getElementById("textarea"+id)
     gWidgets[index].data.text = textarea.value
 }
 
+
+
 // RENDER FUNCTIONS SECTION //
-function renderTextDiv(widget: any) {
-    let id = widget.id
-    let div = documentAddDiv("divText"+id)
-
-    // Border color radios
-    let bordercolorForm = documentAddForm("textBordercolor"+id, "dialog")
-    const isNone = widget.data.bordercolor == "none"
-    const radioNone = documentAddRadioInput("radioNone"+id, "bordercolor", "none", isNone,
-        function() { textareaSetBordercolor(id, "none") })
-    const labelNone = documentAddLabel("radioNone"+id, "None")
-    bordercolorForm.appendChild(radioNone)
-    bordercolorForm.appendChild(labelNone)
-    const isBlack = widget.data.bordercolor == "black"
-    const radioBlack = documentAddRadioInput("radioBlack"+id, "bordercolor", "black", isBlack,
-        function() { textareaSetBordercolor(id, "none") })
-    const labelBlack = documentAddLabel("radioNone"+id, "Black")
-    bordercolorForm.appendChild(radioBlack)
-    bordercolorForm.appendChild(labelBlack)
-    div.appendChild(bordercolorForm)
-
-    // Font radios
-    let fontForm = documentAddForm("textBordercolor"+id, "dialog")
-    const isStandard = widget.data.font == "standard"
-    const radioStandard = documentAddRadioInput("radioStandard"+id, "font", "standard", isStandard,
-        function() { textareaSetFont(id, "none") })
-    const labelStandard = documentAddLabel("radioStandard"+id, "Standard")
-    fontForm.appendChild(radioStandard)
-    fontForm.appendChild(labelStandard)
-    div.appendChild(fontForm)
-    const isMonospaced = widget.data.font == "monospaced"
-    const radioMonospaced = documentAddRadioInput("radioMonospaced"+id, "font", "monospaced", isMonospaced,
-        function() { textareaSetFont(id, "monospaced") })
-    const labelMonospaced = documentAddLabel("radioMonospaced"+id, "Monospaced")
-    fontForm.appendChild(radioMonospaced)
-    fontForm.appendChild(labelMonospaced)
-    div.appendChild(fontForm)
-
-    // Text addition buttons
-    const buttonBold = documentAddButton(
-        "buttonBold"+id,
-        function() { textareaAddBold(id) },
-        "Bold"
-    )
-    div.appendChild(buttonBold)
-    const buttonItalic = documentAddButton(
-        "buttonItalic"+id,
-        function() { textareaAddItalic(id) },
-        "Italic"
-    )
-    div.appendChild(buttonItalic)
-    const buttonHyperlink = documentAddButton(
-        "buttonHyperlink"+id,
-        function() { textareaAddHyperlink(id) },
-        "Hyperlink"
-    )
-    div.appendChild(buttonHyperlink)
-    const buttonAnchor = documentAddButton(
-        "buttonAnchor"+id,
-        function() { textareaAddAnchor(id) },
-        "Anchor"
-    )
-    div.appendChild(buttonAnchor)
-    const buttonCounter = documentAddButton(
-        "buttonCounter"+id,
-        function() { textareaAddCounter(id) },
-        "Counter"
-    )
-    div.appendChild(buttonCounter)
-    const buttonNewline = documentAddButton(
-        "buttonNewline"+id,
-        function() { textareaAddNewline(id) },
-        "Newline"
-    )
-    div.appendChild(buttonNewline)
-
-    // Newline after buttons
-    const br = document.createElement("br")
-    div.appendChild(br)
-
-    // The actual textarea
-    const textarea = documentAddTextarea("textarea"+id, widget.data.text, 75, 10)
-    div.appendChild(textarea)
-
-    // Events
-    textarea.onkeyup = function() { textareaUpdateWidgetText(id) }
-
-    document.body.appendChild(div)
-
-    textareaUpdateWidgetText(id)
-}
-
-function counterChangeId(id: string) {
-    const input: any = document.getElementById("counterId"+id)
-    alert(input.value)
-    const index = getWidgetIndexById(id)
-    gWidgets[index].data.id = input.value
-}
-
-function counterSwitchBr(id: string) {
-    const checkbox: any = document.getElementById("boxBr"+id)
-    const index = getWidgetIndexById(id)
-    alert(checkbox.checked)
-    gWidgets[index].data.br = checkbox.checked
-}
-
-function renderCounterDiv(widget: any) {
-    let id = widget.id
-    let div = documentAddDiv("divCounter"+id)
-
-    const labelId = documentAddLabel("counterId"+id, "Counter ID: ")
-    const inputId = documentAddTextlineInput("counterId"+id, "counterId", widget.data.id, "2")
-    inputId.onkeyup = function () { counterChangeId(id) }
-    div.appendChild(labelId)
-    div.appendChild(inputId)
-
-    const checkboxBr = documentAddCheckboxInput("boxBr"+id, "br", widget.data.br,
-        function() { counterSwitchBr(id) })
-    const labelBr = documentAddLabel("boxBr"+id, "Newline?")
-    div.appendChild(checkboxBr)
-    div.appendChild(labelBr)
-
-    document.body.appendChild(div)
-}
-
-function renderCaptionDiv(widget: any) {
-    let id = widget.id
-    let div = documentAddDiv("divCaption"+id)
-
-    const levelLabel = documentAddLabel("selectLevel"+id, "Caption level:")
-    const options = ["1", "2", "3", "4", "5", "6"]
-    const select = documentAddSelect("selectLevel"+id, "level", options)
-    select.value = widget.data.level
-    select.onchange = function () { captionChangeLevel(id) }
-    div.appendChild(levelLabel)
-    div.appendChild(select)
-
-    const labelId = documentAddLabel("captionId"+id, "ID: ")
-    const inputId = documentAddTextlineInput("captionId"+id, "captionId", widget.data.id, "2")
-    inputId.onkeyup = function () { captionChangeId(id) }
-    div.appendChild(labelId)
-    div.appendChild(inputId)
-
-    const labelText = documentAddLabel("text"+id, "Text: ")
-    const inputText = documentAddTextlineInput("captionText"+id, "captionText", widget.data.text, "25")
-    inputText.onkeyup = function () { captionChangeText(id) }
-    div.appendChild(labelText)
-    div.appendChild(inputText)
-
-    document.body.appendChild(div)
-}
-
 /**
  * Renders the canvas with the given associated widget data
  * (which includes e.g. the ID, points etc.) in the form of
@@ -804,8 +887,8 @@ function renderCanvasDiv(widget: any) {
     const widthInput = documentAddTextlineInput("canvasWidth"+id, "canvasWidth", "500", "2")
     sizeForm.appendChild(widthLabel)
     sizeForm.appendChild(widthInput)
-    const heightLabel = documentAddLabel("canvasHeight"+id, "Height: ")
-    const heightInput = documentAddTextlineInput("canvasHeight"+id, "canvasHeight", "500", "2")
+    const heightLabel = documentAddLabel("canvasHeight"+id, " Height: ")
+    const heightInput = documentAddTextlineInput("canvasHeight"+id, "canvasHeight", "50", "2")
     sizeForm.appendChild(heightLabel)
     sizeForm.appendChild(heightInput)
     const resizeButton = documentAddButton(
@@ -896,7 +979,7 @@ function renderCanvasDiv(widget: any) {
     let canvas = document.createElement("canvas")
     canvas.id = "canvas" + id
     canvas.width = 500
-    canvas.height = 500
+    canvas.height = 50
     canvas.style.border = "1px solid black"
     canvas.textContent = "Unfortunately, your browser does not support canvas elements."
 
@@ -944,28 +1027,51 @@ function renderCanvasDiv(widget: any) {
     canvasDrawPointsOnIt(id, widget.data.pointsHistory)
 }
 
-function menuLoad() {}
-function menuSave() {}
+function renderCaptionDiv(widget: any) {
+    let id = widget.id
+    let div = documentAddDiv("divCaption"+id)
 
-function renderMenuDiv() {
-    let div = documentAddDiv("divMenu")
-    const loadButton = documentAddButton("loadButton", function() { menuLoad() }, "Load...")
-    div.appendChild(loadButton)
-    const saveButton = documentAddButton("saveButton", function() { menuSave() }, "Save...")
-    div.appendChild(saveButton)
+    const levelLabel = documentAddLabel("selectLevel"+id, "Caption level:")
+    const options = ["1", "2", "3", "4", "5", "6"]
+    const select = documentAddSelect("selectLevel"+id, "level", options)
+    select.value = widget.data.level
+    select.onchange = function () { captionChangeLevel(id) }
+    div.appendChild(levelLabel)
+    div.appendChild(select)
 
-    const hr = document.createElement("hr")
-    div.appendChild(hr)
+    const labelId = documentAddLabel("captionId"+id, " ID: ")
+    const inputId = documentAddTextlineInput("captionId"+id, "captionId", widget.data.id, "2")
+    inputId.onkeyup = function () { captionChangeId(id) }
+    div.appendChild(labelId)
+    div.appendChild(inputId)
+
+    const labelText = documentAddLabel("captionText"+id, " Text: ")
+    const inputText = documentAddTextlineInput("captionText"+id, "captionText", widget.data.text, "25")
+    inputText.onkeyup = function () { captionChangeText(id) }
+    div.appendChild(labelText)
+    div.appendChild(inputText)
 
     document.body.appendChild(div)
 }
 
-function controlAddCanvas(position: number) {}
-function controlAddText(position: number) {}
-function controlAddCaption(position: number) {}
-function controlAddCounter(position: number) {}
-function controlSwitchWidgets(position: number) {}
-function controlDeletePrevious(position: number) {}
+function renderCounterDiv(widget: any) {
+    let id = widget.id
+    let div = documentAddDiv("divCounter"+id)
+
+    const labelId = documentAddLabel("counterId"+id, "Counter ID: ")
+    const inputId = documentAddTextlineInput("counterId"+id, "counterId", widget.data.id, "2")
+    inputId.onkeyup = function () { counterChangeId(id) }
+    div.appendChild(labelId)
+    div.appendChild(inputId)
+
+    const checkboxBr = documentAddCheckboxInput("boxBr"+id, "br", widget.data.br,
+        function() { counterSwitchBr(id) })
+    const labelBr = documentAddLabel("boxBr"+id, "Newline?")
+    div.appendChild(checkboxBr)
+    div.appendChild(labelBr)
+
+    document.body.appendChild(div)
+}
 
 function renderControlDiv(position: number) {
     let div = documentAddDiv("divControl"+position)
@@ -988,6 +1094,9 @@ function renderControlDiv(position: number) {
     const deletePrevious = documentAddButton("buttonDeletePrevious"+position,
         function() { controlDeletePrevious(position) }, "/\\ Delete")
     div.appendChild(deletePrevious)
+    const broadcast = documentAddButton("buttonBroadcast"+position,
+        function() { controlBroadcast() }, "BROADCAST")
+    div.appendChild(broadcast)
 
     const hr = document.createElement("hr")
     div.appendChild(hr)
@@ -995,10 +1104,126 @@ function renderControlDiv(position: number) {
     document.body.appendChild(div)
 }
 
-function renderWidgets(widgets: any[]) {
+function menuLoad() {
+    socket.emit("load", "")
+}
+
+function menuSave() {
+    socket.emit("save", gWidgets)
+}
+
+function renderMenuDiv() {
+    let div = documentAddDiv("divMenu")
+    const loadButton = documentAddButton("loadButton", function() { menuLoad() }, "Load...")
+    div.appendChild(loadButton)
+    const saveButton = documentAddButton("saveButton", function() { menuSave() }, "Save...")
+    div.appendChild(saveButton)
+
+    const hr = document.createElement("hr")
+    div.appendChild(hr)
+
+    document.body.appendChild(div)
+}
+
+function renderTextDiv(widget: any) {
+    let id = widget.id
+    let div = documentAddDiv("divText"+id)
+
+    // Border color radios
+    let bordercolorForm = documentAddForm("textBordercolor"+id, "dialog")
+    const isNone = widget.data.bordercolor == "none"
+    const radioNone = documentAddRadioInput("radioNone"+id, "bordercolor", "none", isNone,
+        function() { textareaSetBordercolor(id, "none") })
+    const labelNone = documentAddLabel("radioNone"+id, "None")
+    bordercolorForm.appendChild(radioNone)
+    bordercolorForm.appendChild(labelNone)
+    const isBlack = widget.data.bordercolor == "black"
+    const radioBlack = documentAddRadioInput("radioBlack"+id, "bordercolor", "black", isBlack,
+        function() { textareaSetBordercolor(id, "none") })
+    const labelBlack = documentAddLabel("radioBlack"+id, "Black")
+    bordercolorForm.appendChild(radioBlack)
+    bordercolorForm.appendChild(labelBlack)
+    div.appendChild(bordercolorForm)
+
+    // Font radios
+    let fontForm = documentAddForm("textBordercolor"+id, "dialog")
+    const isStandard = widget.data.font == "standard"
+    const radioStandard = documentAddRadioInput("radioStandard"+id, "font", "standard", isStandard,
+        function() { textareaSetFont(id, "none") })
+    const labelStandard = documentAddLabel("radioStandard"+id, "Standard")
+    fontForm.appendChild(radioStandard)
+    fontForm.appendChild(labelStandard)
+    div.appendChild(fontForm)
+    const isMonospaced = widget.data.font == "monospaced"
+    const radioMonospaced = documentAddRadioInput("radioMonospaced"+id, "font", "monospaced", isMonospaced,
+        function() { textareaSetFont(id, "monospaced") })
+    const labelMonospaced = documentAddLabel("radioMonospaced"+id, "Monospaced")
+    fontForm.appendChild(radioMonospaced)
+    fontForm.appendChild(labelMonospaced)
+    div.appendChild(fontForm)
+
+    // Text addition buttons
+    const buttonBold = documentAddButton(
+        "buttonBold"+id,
+        function() { textareaAddBold(id) },
+        "Bold"
+    )
+    div.appendChild(buttonBold)
+    const buttonItalic = documentAddButton(
+        "buttonItalic"+id,
+        function() { textareaAddItalic(id) },
+        "Italic"
+    )
+    div.appendChild(buttonItalic)
+    const buttonHyperlink = documentAddButton(
+        "buttonHyperlink"+id,
+        function() { textareaAddHyperlink(id) },
+        "Hyperlink"
+    )
+    div.appendChild(buttonHyperlink)
+    const buttonAnchor = documentAddButton(
+        "buttonAnchor"+id,
+        function() { textareaAddAnchor(id) },
+        "Anchor"
+    )
+    div.appendChild(buttonAnchor)
+    const buttonCounter = documentAddButton(
+        "buttonCounter"+id,
+        function() { textareaAddCounter(id) },
+        "Counter"
+    )
+    div.appendChild(buttonCounter)
+    const buttonNewline = documentAddButton(
+        "buttonNewline"+id,
+        function() { textareaAddNewline(id) },
+        "Newline"
+    )
+    div.appendChild(buttonNewline)
+
+    // Newline after buttons
+    const br = document.createElement("br")
+    div.appendChild(br)
+
+    // The actual textarea
+    const labelTextarea = documentAddLabel("textarea"+id, "")
+    const textarea = documentAddTextarea("textarea"+id, widget.data.text, 75, 10)
+    div.appendChild(labelTextarea)
+    div.appendChild(textarea)
+
+    // Events
+    textarea.onkeyup = function() { textareaUpdateWidgetText(id) }
+
+    document.body.appendChild(div)
+
+    textareaUpdateWidgetText(id)
+}
+
+function renderWidgets() {
+    document.body.innerHTML = ""
+
     renderMenuDiv()
-    let position = 0
-    for (let widget of widgets) {
+    let position = 1
+    for (let widget of gWidgets) {
         if (widget.type == "canvas") {
             renderCanvasDiv(widget)
         } else if (widget.type == "text") {
@@ -1013,4 +1238,10 @@ function renderWidgets(widgets: any[]) {
     }
 }
 
-renderWidgets(gWidgets)
+renderWidgets()
+
+for (const events of ["touchend", "touchleave", "mouseup"]) {
+    document.body.addEventListener(events, function(event: any) {
+        //
+    })
+}
