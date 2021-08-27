@@ -97,6 +97,8 @@ let gWidgets = [
             pointsHistory: [],
             isLocked: false,
             isWithPressure: false,
+            width: 500,
+            height: 50,
         },
     },
     {
@@ -204,6 +206,8 @@ function getRawCanvas(): any {
             pointsHistory: [],
             isLocked: false,
             isWithPressure: false,
+            width: 500,
+            height: 50,
         },
     }
 }
@@ -324,7 +328,18 @@ function documentAddButton(id: string, onclick: any, text: string): HTMLButtonEl
 }
 
 /**
- * Creates a new div at the bottom for the HTML document
+ * Creates a new br (newline break) for the HTML document
+ * and returns this new br instance.
+ *
+ * @returns The newly created br HTML element instance
+ */
+ function documentAddBr(): HTMLBRElement {
+    let br = document.createElement("br")
+    return br
+}
+
+/**
+ * Creates a new div for the HTML document
  * and returns this new div instance.
  *
  * @param id The div's ID. It should be unique in the whole document
@@ -334,21 +349,6 @@ function documentAddDiv(id: string): HTMLDivElement {
     let div = document.createElement("div")
     div.id = id
     return div
-}
-
-/**
- * Creates a new form element for the HTML document
- * and returns this new form instance.
- *
- * @param id The form's ID. It should be unique in the whole document
- * @param method The form's action method (such as "dialog")
- * @returns The newly created form HTML element instance
- */
-function documentAddForm(id: string, method: HTMLFormElement['method']): HTMLFormElement {
-    let form = document.createElement("form")
-    form.name = id
-    form.method = method
-    return form
 }
 
 /**
@@ -599,8 +599,20 @@ function controlSwitchWidgets(position: number): void {
     const canvas: any = document.getElementById("canvas"+id)
     const index = getWidgetIndexById(id)
 
+    let radios: string[] = [
+        "radioFree",
+        "radioHorizontal",
+        "radioVertical",
+        "radioRising",
+        "radioFalling",
+    ]
     let selectedDrawmode: string
-    selectedDrawmode = document.forms.namedItem("drawmodeRadios"+id).drawmode.value
+    for (let radio of radios) {
+        let radioElement: any = document.getElementById(radio+id)
+        if (radioElement.checked) {
+            selectedDrawmode = radioElement.value
+        }
+    }
 
     let pressure: number
     let x: number
@@ -640,8 +652,35 @@ function controlSwitchWidgets(position: number): void {
         y = gStartPoint.y + (x - gStartPoint.x)
     }
 
-    const selectedColor = document.forms.namedItem("canvasColor"+id).color.value
-    const selectedLineWidth = document.forms.namedItem("canvasWidth"+id).width.value
+    let radios2: string[] = [
+        "radioThin",
+        "radioMedium",
+        "radioThick",
+    ]
+    let selectedLineWidth: string
+    for (let radio of radios2) {
+        let radioElement: any = document.getElementById(radio+id)
+        if (radioElement.checked) {
+            selectedLineWidth = radioElement.value
+        }
+    }
+
+    let radios3: string[] = [
+        "radioBlack",
+        "radioWhite",
+        "radioRed",
+        "radioBlue",
+        "radioGreen",
+        "radioYellow",
+    ]
+    let selectedColor: string
+    for (let radio of radios3) {
+        let radioElement: any = document.getElementById(radio+id)
+        if (radioElement.checked) {
+            selectedColor = radioElement.value
+        }
+    }
+
     let resultingLineWidth: number = Math.log(pressure+1)
     if (selectedLineWidth == "thin") {
         resultingLineWidth *= 5.0
@@ -770,9 +809,10 @@ function canvasMove(id: string, xMove: number, yMove: number): void {
  * @param id The canvas's ID
  */
 function canvasResize(id: string): void {
-    // TODO: Make it independent from the text line input
-    const newWidth = parseInt(document.forms.namedItem("canvasSize"+id).canvasWidth.value)
-    const newHeight = parseInt(document.forms.namedItem("canvasSize"+id).canvasHeight.value)
+    let widthElement: any = document.getElementById("canvasWidth"+id)
+    const newWidth = parseInt(widthElement.value)
+    let heightElement: any = document.getElementById("canvasHeight"+id)
+    const newHeight = parseInt(heightElement.value)
     const canvas: any = document.getElementById("canvas"+id)
 
     if (newWidth != NaN) {
@@ -782,7 +822,10 @@ function canvasResize(id: string): void {
         canvas.height = newHeight
     }
 
+    canvasFillWhite(id)
     const index = getWidgetIndexById(id)
+    gWidgets[index].data.width = newWidth
+    gWidgets[index].data.height = newHeight
     canvasDrawPointsOnIt(id, gWidgets[index].data.pointsHistory)
 }
 
@@ -894,7 +937,7 @@ function counterSwitchBr(id: string) {
         const canvas: any = document.getElementById("canvas"+widgetsWithBase64[i].id)
         // We fill the canvas with white color in order to the
         // the otherwise black background white
-        canvasClear(widgetsWithBase64[i].id)
+        canvasFillWhite(widgetsWithBase64[i].id)
         canvasDrawPointsOnIt(widgetsWithBase64[i].id, widgetsWithBase64[i].data.pointsHistory)
         const base64str = canvas.toDataURL("image/jpeg")
         widgetsWithBase64[i].data["base64"] = base64str
@@ -1096,135 +1139,136 @@ function textareaUpdateWidgetText(id: string) {
  */
 function renderCanvasDiv(widget: any) {
     let id = widget.id
+    let index = getWidgetIndexById(id)
     let div = documentAddDiv("divCanvas"+id)
 
-    // Canvas movement form
-    let moveForm = documentAddForm("canvasMovement"+id, "dialog")
+    // Canvas movement div
+    let moveDiv = documentAddDiv("canvasMovement"+id)
     const clearButton = documentAddButton(
         "buttonClear"+id,
         function() { canvasClear(id) },
         "Clear"
     )
-    moveForm.appendChild(clearButton)
+    moveDiv.appendChild(clearButton)
     const leftButton = documentAddButton(
         "buttonMoveLeft"+id,
         function() { canvasMove(id, -3, 0) },
         "Move left"
     )
-    moveForm.appendChild(leftButton)
+    moveDiv.appendChild(leftButton)
     const rightButton = documentAddButton(
         "buttonMoveRight"+id,
         function() { canvasMove(id, 3, 0) },
         "Move left"
     )
-    moveForm.appendChild(rightButton)
+    moveDiv.appendChild(rightButton)
     const downButton = documentAddButton(
         "buttonMoveDown"+id,
         function() { canvasMove(id, 0, 3) },
         "Move left"
     )
-    moveForm.appendChild(downButton)
-    div.appendChild(moveForm)
+    moveDiv.appendChild(downButton)
+    div.appendChild(moveDiv)
 
-    // Canvas size form
-    let sizeForm = documentAddForm("canvasSize"+id, "dialog")
+    // Canvas size div
+    let sizeDiv = documentAddDiv("canvasSize"+id)
     const widthLabel = documentAddLabel("canvasWidth"+id, "Width: ")
-    const widthInput = documentAddTextlineInput("canvasWidth"+id, "canvasWidth", "500", "2")
-    sizeForm.appendChild(widthLabel)
-    sizeForm.appendChild(widthInput)
+    const widthInput = documentAddTextlineInput("canvasWidth"+id, "canvasWidth", "500", "5")
+    sizeDiv.appendChild(widthLabel)
+    sizeDiv.appendChild(widthInput)
     const heightLabel = documentAddLabel("canvasHeight"+id, " Height: ")
-    const heightInput = documentAddTextlineInput("canvasHeight"+id, "canvasHeight", "50", "2")
-    sizeForm.appendChild(heightLabel)
-    sizeForm.appendChild(heightInput)
+    const heightInput = documentAddTextlineInput("canvasHeight"+id, "canvasHeight", "50", "5")
+    sizeDiv.appendChild(heightLabel)
+    sizeDiv.appendChild(heightInput)
     const resizeButton = documentAddButton(
         "buttonResize"+id,
         function () { canvasResize(id) },
         "Resize"
     )
-    sizeForm.appendChild(resizeButton)
-    div.appendChild(sizeForm)
+    sizeDiv.appendChild(resizeButton)
+    div.appendChild(sizeDiv)
 
     // Canvas color form
-    let colorForm = documentAddForm("canvasColor"+id, "dialog")
+    let colorDiv = documentAddDiv("canvasColor"+id)
     const radioBlack = documentAddRadioInput("radioBlack"+id, "color", "black", true, function() {})
     const labelBlack = documentAddLabel("radioBlack"+id, "Black")
-    colorForm.appendChild(radioBlack)
-    colorForm.appendChild(labelBlack)
+    colorDiv.appendChild(radioBlack)
+    colorDiv.appendChild(labelBlack)
     const radioWhite = documentAddRadioInput("radioWhite"+id, "color", "white", false, function() {})
     const labelWhite = documentAddLabel("radioWhite"+id, "White")
-    colorForm.appendChild(radioWhite)
-    colorForm.appendChild(labelWhite)
+    colorDiv.appendChild(radioWhite)
+    colorDiv.appendChild(labelWhite)
     const radioRed = documentAddRadioInput("radioRed"+id, "color", "red", false, function() {})
     const labelRed = documentAddLabel("radioRed"+id, "Red")
-    colorForm.appendChild(radioRed)
-    colorForm.appendChild(labelRed)
+    colorDiv.appendChild(radioRed)
+    colorDiv.appendChild(labelRed)
     const radioBlue = documentAddRadioInput("radioBlue"+id, "color", "blue", false, function() {})
     const labelBlue = documentAddLabel("radioBlue"+id, "Blue")
-    colorForm.appendChild(radioBlue)
-    colorForm.appendChild(labelBlue)
+    colorDiv.appendChild(radioBlue)
+    colorDiv.appendChild(labelBlue)
     const radioGreen = documentAddRadioInput("radioGreen"+id, "color", "green", false, function() {})
     const labelGreen = documentAddLabel("radioGreen"+id, "Green")
-    colorForm.appendChild(radioGreen)
-    colorForm.appendChild(labelGreen)
+    colorDiv.appendChild(radioGreen)
+    colorDiv.appendChild(labelGreen)
     const radioYellow = documentAddRadioInput("radioYellow"+id, "color", "yellow", false, function() {})
     const labelYellow = documentAddLabel("radioYellow"+id, "Yellow")
-    colorForm.appendChild(radioYellow)
-    colorForm.appendChild(labelYellow)
-    div.appendChild(colorForm)
+    colorDiv.appendChild(radioYellow)
+    colorDiv.appendChild(labelYellow)
+    div.appendChild(colorDiv)
 
-    // Pencil width form
-    let widthForm = documentAddForm("canvasWidth"+id, "dialog")
+    // Pencil width div
+    let widthDiv = documentAddDiv("canvasWidth"+id)
     const radioThin = documentAddRadioInput("radioThin"+id, "width", "thin", true, function() {})
     const labelThin = documentAddLabel("radioThin"+id, "Thin")
-    widthForm.appendChild(radioThin)
-    widthForm.appendChild(labelThin)
+    widthDiv.appendChild(radioThin)
+    widthDiv.appendChild(labelThin)
     const radioMedium = documentAddRadioInput("radioMedium"+id, "width", "medium", false, function() {})
     const labelMedium = documentAddLabel("radioMedium"+id, "Medium")
-    widthForm.appendChild(radioMedium)
-    widthForm.appendChild(labelMedium)
+    widthDiv.appendChild(radioMedium)
+    widthDiv.appendChild(labelMedium)
     const radioThick = documentAddRadioInput("radioThick"+id, "width", "thick", false, function() {})
     const labelThick = documentAddLabel("radioThick"+id, "Thick")
-    widthForm.appendChild(radioThick)
-    widthForm.appendChild(labelThick)
+    widthDiv.appendChild(radioThick)
+    widthDiv.appendChild(labelThick)
     const checkboxPressure = documentAddCheckboxInput("boxPressure"+id, "pressure", widget.data.isLocked, function() {})
     const labelPressure = documentAddLabel("boxPressure"+id, "Pressure?")
-    widthForm.appendChild(checkboxPressure)
-    widthForm.appendChild(labelPressure)
+    widthDiv.appendChild(checkboxPressure)
+    widthDiv.appendChild(labelPressure)
     const checkboxLocked = documentAddCheckboxInput("boxLocked"+id, "locked", widget.data.isWithPressure, function() { canvasLock(id) })
     const labelLocked = documentAddLabel("boxLocked"+id, "Locked?")
-    widthForm.appendChild(checkboxLocked)
-    widthForm.appendChild(labelLocked)
-    div.appendChild(widthForm)
+    widthDiv.appendChild(checkboxLocked)
+    widthDiv.appendChild(labelLocked)
+    div.appendChild(widthDiv)
 
     // Drawmode form
-    let drawmodeForm = documentAddForm("drawmodeRadios"+id, "dialog")
+    let drawmodeDiv = documentAddDiv("drawmodeRadios"+id)
     const radioFree = documentAddRadioInput("radioFree"+id, "drawmode", "free", true, function() {})
     const labelFree = documentAddLabel("radioFree"+id, "Free")
-    drawmodeForm.appendChild(radioFree)
-    drawmodeForm.appendChild(labelFree)
+    drawmodeDiv.appendChild(radioFree)
+    drawmodeDiv.appendChild(labelFree)
     const radioHorizontal = documentAddRadioInput("radioHorizontal"+id, "drawmode", "horizontal", false, function() {})
     const labelHorizontal = documentAddLabel("radioHorizontal"+id, "Horizontal")
-    drawmodeForm.appendChild(radioHorizontal)
-    drawmodeForm.appendChild(labelHorizontal)
+    drawmodeDiv.appendChild(radioHorizontal)
+    drawmodeDiv.appendChild(labelHorizontal)
     const radioVertical = documentAddRadioInput("radioVertical"+id, "drawmode", "vertical", false, function() {})
     const labelVertical = documentAddLabel("radioVertical"+id, "Vertical")
-    drawmodeForm.appendChild(radioVertical)
-    drawmodeForm.appendChild(labelVertical)
+    drawmodeDiv.appendChild(radioVertical)
+    drawmodeDiv.appendChild(labelVertical)
     const radioRising = documentAddRadioInput("radioRising"+id, "drawmode", "rising", false, function() {})
     const labelRising = documentAddLabel("radioRising"+id, "Rising")
-    drawmodeForm.appendChild(radioRising)
-    drawmodeForm.appendChild(labelRising)
+    drawmodeDiv.appendChild(radioRising)
+    drawmodeDiv.appendChild(labelRising)
     const radioFalling = documentAddRadioInput("radioFalling"+id, "drawmode", "falling", false, function() {})
     const labelFalling = documentAddLabel("radioFalling"+id, "Falling")
-    drawmodeForm.appendChild(radioFalling)
-    drawmodeForm.appendChild(labelFalling)
-    div.appendChild(drawmodeForm)
+    drawmodeDiv.appendChild(radioFalling)
+    drawmodeDiv.appendChild(labelFalling)
+    div.appendChild(drawmodeDiv)
 
     // The actual canvas
     let canvas = document.createElement("canvas")
     canvas.id = "canvas" + id
-    canvas.width = 500
-    canvas.height = 50
+    canvas.width = gWidgets[index].data.width
+    canvas.height = gWidgets[index].data.height
     canvas.style.border = "1px solid black"
     canvas.textContent = "Unfortunately, your browser does not support canvas elements."
 
@@ -1295,7 +1339,7 @@ function renderCaptionDiv(widget: any) {
     div.appendChild(select)
 
     const labelId = documentAddLabel("captionId"+id, " ID: ")
-    const inputId = documentAddTextlineInput("captionId"+id, "captionId", widget.data.id, "2")
+    const inputId = documentAddTextlineInput("captionId"+id, "captionId", widget.data.id, "10")
     inputId.onkeyup = function () { captionChangeId(id) }
     div.appendChild(labelId)
     div.appendChild(inputId)
@@ -1327,7 +1371,7 @@ function renderCounterDiv(widget: any) {
         "counterFamily"+id,
         "counterFamily",
         widget.data.family,
-        "2"
+        "10"
     )
     inputFamily.onkeyup = function () { counterChangeFamily(id) }
     div.appendChild(labelFamily)
@@ -1338,7 +1382,7 @@ function renderCounterDiv(widget: any) {
         "counterReference"+id,
         "counterReference",
         widget.data.reference,
-        "2"
+        "10"
     )
     inputReferece.onkeyup = function () { counterChangeReference(id) }
     div.appendChild(labelReference)
@@ -1427,37 +1471,37 @@ function renderTextDiv(widget: any) {
     let div = documentAddDiv("divText"+id)
 
     // Border color radios
-    let bordercolorForm = documentAddForm("textBordercolor"+id, "dialog")
+    let bordercolorDiv = documentAddDiv("textBordercolor"+id)
     const isNone = widget.data.bordercolor == "none"
     const radioNone = documentAddRadioInput("radioNone"+id, "bordercolor", "none", isNone,
         function() { textareaSetBordercolor(id, "none") })
     const labelNone = documentAddLabel("radioNone"+id, "None")
-    bordercolorForm.appendChild(radioNone)
-    bordercolorForm.appendChild(labelNone)
+    bordercolorDiv.appendChild(radioNone)
+    bordercolorDiv.appendChild(labelNone)
     const isBlack = widget.data.bordercolor == "black"
     const radioBlack = documentAddRadioInput("radioBlack"+id, "bordercolor", "black", isBlack,
         function() { textareaSetBordercolor(id, "none") })
     const labelBlack = documentAddLabel("radioBlack"+id, "Black")
-    bordercolorForm.appendChild(radioBlack)
-    bordercolorForm.appendChild(labelBlack)
-    div.appendChild(bordercolorForm)
+    bordercolorDiv.appendChild(radioBlack)
+    bordercolorDiv.appendChild(labelBlack)
+    div.appendChild(bordercolorDiv)
 
     // Font radios
-    let fontForm = documentAddForm("textBordercolor"+id, "dialog")
+    let fontDiv = documentAddDiv("textBordercolor"+id)
     const isStandard = widget.data.font == "standard"
     const radioStandard = documentAddRadioInput("radioStandard"+id, "font", "standard", isStandard,
         function() { textareaSetFont(id, "none") })
     const labelStandard = documentAddLabel("radioStandard"+id, "Standard")
-    fontForm.appendChild(radioStandard)
-    fontForm.appendChild(labelStandard)
-    div.appendChild(fontForm)
+    fontDiv.appendChild(radioStandard)
+    fontDiv.appendChild(labelStandard)
+    div.appendChild(fontDiv)
     const isMonospaced = widget.data.font == "monospaced"
     const radioMonospaced = documentAddRadioInput("radioMonospaced"+id, "font", "monospaced", isMonospaced,
         function() { textareaSetFont(id, "monospaced") })
     const labelMonospaced = documentAddLabel("radioMonospaced"+id, "Monospaced")
-    fontForm.appendChild(radioMonospaced)
-    fontForm.appendChild(labelMonospaced)
-    div.appendChild(fontForm)
+    fontDiv.appendChild(radioMonospaced)
+    fontDiv.appendChild(labelMonospaced)
+    div.appendChild(fontDiv)
 
     // Text addition buttons
     const buttonBold = documentAddButton(
