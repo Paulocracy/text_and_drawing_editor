@@ -41,3 +41,5 @@ https://github.com/shuding/apple-pencil-safari-api-test
 * Bulma as responsive CSS style kit?
 * Explain "id" and "base id"?
 * Typing for single widgets and the widget list by using classes and enums?
+* Follow a specific TS/JS style guide
+* Write a documentation

@@ -2,22 +2,21 @@ var socket = io()
 // ...THIS LINE (END OF LINES WHICH MUST NOT BE CHANGED)
 // The reason for why this is done: Otherwise, run.py's transformation
 // for a working static import wouldn't work correctly
+// SOCKET.IO EVENTS SECTION //
+/**
+ * The "connect" event tells the consolel-uplooking user that
+ * the connection to the server works.
+ */
 socket.on('connect', function () {
-    alert("Server connected");
+    console.log("SOCKET.IO: Server connected");
 });
-socket.on('custom_event_2', function () {
-    socket.emit('custom_event_3', { data: 'I\'m connected!' });
-});
-socket.on('custom_event_4', function () {
-    socket.emit('custom_event_5', "The end.");
-});
-function button_function() {
-    socket.emit('custom_event_1', { data: 'I\'m connected!' });
-}
+/**
+ * In the "broadcast_to_client" event, all clients
+ * are synchronized, i.e., the client which initially triggers
+ * this event sets its widgets for all other clients.
+ */
 socket.on('broadcast_to_client', function (data) {
-    alert("AAAA");
-    alert(data);
-    alert(data[0]);
+    console.log("SOCKET.IO: Receiving 'broadcast_to_client' event");
     gWidgets = data;
     renderWidgets();
 });
@@ -52,19 +51,25 @@ var gStartPoint;
  * or not the user allows it to draw on the canvas, 3) an "isWithPressure" boolean
  * showing whether or not the user wants to draw with an acknowledgement of a touch
  * device's pressure.
+ *
+ * If the widget is a "text", the data contains: 1) A text string which contains
+ * the text's textarea text, 2) a "bordercolor" string which defines a border color
+ * for the HTML output, 3) a "font" string which defines a font type for the HTML
+ * output.
+ *
+ * If the widget is a "caption", its data contains: 1) A "text" string which
+ * defines the caption's name, 2) an "id" string which defines the caption's ID
+ * to which it can be referred to in text, 3) a "level" string which defines
+ * which caption level this caption has (lower numbers mean a higher level).
+ *
+ * If the widget is a "counter", its data contains: 1) An "id" string
+ * to which it can be referred to in text, 2) a "br" boolean which
+ * defines whether or not a newline shall be added in the HTML output just
+ * before the counter.
  */
 var gWidgets = [
     {
         id: "ABCDE",
-        type: "canvas",
-        data: {
-            pointsHistory: [],
-            isLocked: false,
-            isWithPressure: false
-        }
-    },
-    {
-        id: "BBBB",
         type: "canvas",
         data: {
             pointsHistory: [],
@@ -101,6 +106,18 @@ var gWidgets = [
 ];
 // GLOBAL WIDGET FUNCTION SECTION //
 /**
+ * Adds the widget object in the global widgets variable at
+ * the given position.
+ *
+ * @param position The position that the new widget shall take.
+ * Must be at least 0 or below gWidgets.length
+ * @param widget The widget object
+ */
+function addWidgetAtGlobalPosition(position, widget) {
+    gWidgets.splice(position, 0, widget);
+    renderWidgets();
+}
+/**
  * Returns the index (i.e., 0 up to the length of the global widgets variable)
  * of the element with the given ID in the global widgets variable.
  *
@@ -119,6 +136,15 @@ function getWidgetIndexById(id) {
     }
     return index;
 }
+/**
+ * Returns a unique base ID. The ID is a number, starting form 0.
+ * The unique ID is identified by checking the number with all
+ * other global widget base IDs; If the ID occurs, the number is
+ * raised by 1 and the procedure starts again; If the ID does not
+ * occur, a unique ID was found and is returned.
+ *
+ * @returns The unique base ID
+ */
 function getUniqueId() {
     var id = 0;
     var isNotUnique = true;
@@ -133,6 +159,14 @@ function getUniqueId() {
     }
     return id.toString();
 }
+/**
+ * Returns a "raw" canvas widget in the form of
+ * an object. "Raw" means that it has standard
+ * sized and that it is empty. In addition, it
+ * gets a unique base ID.
+ *
+ * @returns The "raw" canvas object
+ */
 function getRawCanvas() {
     return {
         id: getUniqueId(),
@@ -144,6 +178,14 @@ function getRawCanvas() {
         }
     };
 }
+/**
+ * Returns a "raw" text widget in the form of
+ * an object. "Raw" means that it has standard
+ * sized and that it is empty. In addition,
+ * it gets a unique base ID.
+ *
+ * @returns The "raw" canvas object
+ */
 function getRawText() {
     return {
         id: getUniqueId(),
@@ -155,6 +197,13 @@ function getRawText() {
         }
     };
 }
+/**
+ * Returns a "raw" caption widget in the form of
+ * an object. "Raw" means that it is empty.
+ * In addition, it gets a unique base ID.
+ *
+ * @returns The "raw" canvas object
+ */
 function getRawCaption() {
     return {
         id: getUniqueId(),
@@ -166,6 +215,13 @@ function getRawCaption() {
         }
     };
 }
+/**
+ * Returns a "raw" counter widget in the form of
+ * an object. "Raw" means that it is empty.
+ * In addition, it gets a unique base ID.
+ *
+ * @returns The "raw" canvas object
+ */
 function getRawCounter() {
     return {
         id: getUniqueId(),
@@ -176,11 +232,7 @@ function getRawCounter() {
         }
     };
 }
-function widgetsAddWidgetAtPosition(position, widget) {
-    gWidgets.splice(position, 0, widget);
-    renderWidgets();
-}
-// POINT DEFINITION SECTION //
+// POINT FUNCTION SECTION //
 /**
  * Get a JS object (i.e., a JSON) of a canvas drawing point containing the given parameters
  * with the given names. This points contains all (at the time of its drawing) current
@@ -312,6 +364,17 @@ function documentAddRadioInput(id, name, value, checked, onclick) {
     input.onclick = onclick;
     return input;
 }
+/**
+ * Creates a new select HTML element with the given parameters
+ * and returns the newly created select instance.
+ *
+ * @param id The select's ID
+ * @param name The select's name which defines the name of the value
+ * that the select represents
+ * @param The select's options which will be added as a list of
+ * option HTML elements inside the newly created select instance
+ * @returns The newly created select instance
+ */
 function documentAddSelect(id, name, options) {
     var select = document.createElement("select");
     select.id = id;
@@ -325,6 +388,16 @@ function documentAddSelect(id, name, options) {
     }
     return select;
 }
+/**
+ * Creates a new textarea HTML element with the given parameters
+ * and return the newly created textarea instance.
+ *
+ * @param id The textarea's ID
+ * @param text The text which is displayed in the textarea
+ * @param cols The textarea's colums (~width in character lines)
+ * @param rows The textarea's rows (~height in character lines)
+ * @returns The newly created textarea instance
+ */
 function documentAddTextarea(id, text, cols, rows) {
     var textarea = document.createElement("textarea");
     textarea.id = id;
@@ -360,25 +433,70 @@ function documentAddTextlineInput(id, name, value, size) {
     return input;
 }
 // CONTROL WIDGET FUNCTION SECTION //
+/**
+ * Adds a raw canvas widget in the global widgets list
+ * at the given position.
+ *
+ * @param position The position to which the widget will be added
+ */
 function controlAddCanvas(position) {
-    widgetsAddWidgetAtPosition(position, getRawCanvas());
+    addWidgetAtGlobalPosition(position, getRawCanvas());
 }
+/**
+ * Adds a raw caption widget in the global widgets list
+ * at the given position.
+ *
+ * @param position The position to which the widget will be added
+ */
 function controlAddCaption(position) {
-    widgetsAddWidgetAtPosition(position, getRawCaption());
+    addWidgetAtGlobalPosition(position, getRawCaption());
 }
+/**
+ * Adds a raw counter widget in the global widgets list
+ * at the given position.
+ *
+ * @param position The position to which the widget will be added
+ */
 function controlAddCounter(position) {
-    widgetsAddWidgetAtPosition(position, getRawCounter());
+    addWidgetAtGlobalPosition(position, getRawCounter());
 }
+/**
+ * Emits a Socket.IO broadcast call to all clients
+ * which are connected to the server. This call
+ * triggers all clients to the synchrozied and to get
+ * the same global widgets set as the triggering
+ * client.
+ */
 function controlBroadcast() {
+    console.log("SOCKET.IO: Emitting 'broadcastToServer' event");
     socket.emit("broadcastToServer", gWidgets);
 }
+/**
+ * Deletes the widget with the given position in the global
+ * widgets list.
+ *
+ * @param position The position of the widget that shall
+ * be deleted.
+ */
 function controlDeletePrevious(position) {
     gWidgets.splice(position - 1, 1);
     renderWidgets();
 }
+/**
+ * Adds a raw text widget in the global widgets list
+ * at the given position.
+ *
+ * @param position The position to which the widget will be added
+ */
 function controlAddText(position) {
-    widgetsAddWidgetAtPosition(position, getRawText());
+    addWidgetAtGlobalPosition(position, getRawText());
 }
+/**
+ * Switches the widget positions before and after the control
+ * widget's position. THis is only done if the positions
+ * are valid, i.e. greater than 0 and below the global widget
+ * list's length.
+ */
 function controlSwitchWidgets(position) {
     if ((position >= gWidgets.length) || (position == 0)) {
         return;
@@ -633,6 +751,25 @@ function counterSwitchBr(id) {
     var index = getWidgetIndexById(id);
     gWidgets[index].data.br = checkbox.checked;
 }
+// MENU WIDGET FUNCTIONS //
+/**
+ * Emits a Socket.IO call to the server so that it is triggered
+ * to start its JSON loading routine. The server will answer
+ * with a client broadcast if the loading is successful.
+ */
+function menuLoad() {
+    console.log("Emitting 'load' event");
+    socket.emit("load", "");
+}
+/**
+ * Emits a Socket.IO call to the server so that it is triggered
+ * to start its JSON saving routine. As data, the current global
+ * are sent.
+ */
+function menuSave() {
+    console.log("Emitting 'save' event");
+    socket.emit("save", gWidgets);
+}
 // TEXT WIDGET FUNCTIONS SECTION //
 /**
  * Add the symbol(s) "*" to the text widget's
@@ -701,6 +838,22 @@ function textareaAddCounter(id) {
 function textareaAddNewline(id) {
     textareaInsert(id, "<br>", false);
 }
+/**
+ * Adds text to the text widget's textarea element according to
+ * the "multi" argument logic (see this parameter).
+ *
+ * @param id The text widget's base ID
+ * @param insert The string that shall be added
+ * @param multi The logic of the string addition: A) If it is "true",
+ * there are 2 possible cases: 1) If the user selected an area, then
+ * the insert will be added at the beginning and the end of the selection.
+ * This is e.g. helpful in order to add the "*" symbol (for bold text)
+ * for a whole selection. 2) If the user only selected a single character,
+ * only one character will be added. B) If it is "false", then the insert
+ * is always only inserted once: 1) If the user selected an area, then
+ * the insert will be added at the selection's beginning only. 2) If the
+ * user selected only a single character, the insert will be added there.
+ */
 function textareaInsert(id, insert, multi) {
     var textarea = document.getElementById("textarea" + id);
     var selectionStart = textarea.selectionStart;
@@ -719,6 +872,14 @@ function textareaInsert(id, insert, multi) {
     textarea.value = newtext;
     textareaUpdateWidgetText(id);
 }
+/**
+ * Sets the textarea's associated global widget representation
+ * of its bordercolor to the given value.
+ *
+ * @param id The textarea's base ID
+ * @param color The bordercolor to which the associated textarea's
+ * global widget representation data shall be set
+ */
 function textareaSetBordercolor(id, color) {
     var index = getWidgetIndexById(id);
     gWidgets[index].data.bordercolor = color;
@@ -757,10 +918,10 @@ function textareaUpdateWidgetText(id) {
  * Renders the canvas with the given associated widget data
  * (which includes e.g. the ID, points etc.) in the form of
  * the addition of a div with all associated canvas HTML
- * elements. THis div is added at the bottom of the HTML
+ * elements. This div is added at the bottom of the HTML
  * element.
  *
- * @param widget The associated widget data
+ * @param widget The associated widget object
  */
 function renderCanvasDiv(widget) {
     var id = widget.id;
@@ -907,6 +1068,15 @@ function renderCanvasDiv(widget) {
     document.body.appendChild(div);
     canvasDrawPointsOnIt(id, widget.data.pointsHistory);
 }
+/**
+ * Renders the caption with the given associated widget data
+ * (which includes e.g. the ID etc.) in the form of
+ * the addition of a div with all associated caption HTML
+ * elements. This div is added at the bottom of the HTML
+ * element.
+ *
+ * @param widget The associated widget object
+ */
 function renderCaptionDiv(widget) {
     var id = widget.id;
     var div = documentAddDiv("divCaption" + id);
@@ -929,6 +1099,15 @@ function renderCaptionDiv(widget) {
     div.appendChild(inputText);
     document.body.appendChild(div);
 }
+/**
+ * Renders the counter with the given associated widget data
+ * (which includes e.g. the ID etc.) in the form of
+ * the addition of a div with all associated counter HTML
+ * elements. This div is added at the bottom of the HTML
+ * element.
+ *
+ * @param widget The associated widget object
+ */
 function renderCounterDiv(widget) {
     var id = widget.id;
     var div = documentAddDiv("divCounter" + id);
@@ -943,6 +1122,14 @@ function renderCounterDiv(widget) {
     div.appendChild(labelBr);
     document.body.appendChild(div);
 }
+/**
+ * Renders the control with its position which shows
+ * to which widget(s) of the global widget lists it
+ * refers to. This div is added at the bottom of the HTML
+ * element.
+ *
+ * @param position The control's position
+ */
 function renderControlDiv(position) {
     var div = documentAddDiv("divControl" + position);
     var addCanvas = documentAddButton("buttonAddCanvas" + position, function () { controlAddCanvas(position); }, "+Canvas");
@@ -963,12 +1150,12 @@ function renderControlDiv(position) {
     div.appendChild(hr);
     document.body.appendChild(div);
 }
-function menuLoad() {
-    socket.emit("load", "");
-}
-function menuSave() {
-    socket.emit("save", gWidgets);
-}
+/**
+ * Renders the menu with the given associated widget elements
+ * (such as the buttons) in the form of
+ * the addition of a div. This div is added at the bottom
+ * of the HTML element.
+ */
 function renderMenuDiv() {
     var div = documentAddDiv("divMenu");
     var loadButton = documentAddButton("loadButton", function () { menuLoad(); }, "Load...");
@@ -979,6 +1166,15 @@ function renderMenuDiv() {
     div.appendChild(hr);
     document.body.appendChild(div);
 }
+/**
+ * Renders the text with the given associated widget data
+ * (which includes e.g. the textarea text etc.) in the form of
+ * the addition of a div with all associated text HTML
+ * elements. This div is added at the bottom of the HTML
+ * element.
+ *
+ * @param widget The associated widget object
+ */
 function renderTextDiv(widget) {
     var id = widget.id;
     var div = documentAddDiv("divText" + id);
@@ -1035,10 +1231,19 @@ function renderTextDiv(widget) {
     document.body.appendChild(div);
     textareaUpdateWidgetText(id);
 }
+/**
+ * Deletes the total HTML document's body content
+ * and then adds the global widgets as HTML elements
+ * according to their order in the global widgets
+ * list, thereby redrawing all elements.
+ */
 function renderWidgets() {
     document.body.innerHTML = "";
     renderMenuDiv();
     var position = 1;
+    if (gWidgets.length == 0) {
+        renderControlDiv(position);
+    }
     for (var _i = 0, gWidgets_2 = gWidgets; _i < gWidgets_2.length; _i++) {
         var widget = gWidgets_2[_i];
         if (widget.type == "canvas") {

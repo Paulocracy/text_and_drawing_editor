@@ -15,31 +15,15 @@ def index():
                            sync_mode=socketio.async_mode)
 
 
-@socketio.on('custom_event_1')
-def handle_custom_event_1(json):
-    print("Custom event 1!")
-    print(f"Got JSON: {json}")
-    emit("custom_event_2", json)
-
-@socketio.on('custom_event_3')
-def handle_custom_event_3(json):
-    print("Custom event 3!")
-    print(f"Got JSON: {json}")
-    emit('custom_event_4', json, broadcast=True)
-
-@socketio.on('custom_event_5')
-def handle_custom_event_5(string):
-    print("Custom event 5!")
-    print(f"Got string: {string}")
-
-
 @socketio.on("broadcast_to_server")
 def handle_broadcast_to_server(json):
+    print("SOCKET.IO: Received 'boradcast_to_server' event")
     emit('broadcast_to_client', json, broadcast=True)
 
 
 @socketio.on("load")
 def handle_load(empty):
+    print("SOCKET.IO: Received 'load' event")
     root = tkinter.Tk()
     filename = askopenfilename(
         parent=root,
@@ -55,6 +39,7 @@ def handle_load(empty):
 
 @socketio.on("save")
 def handle_save(json):
+    print("SOCKET.IO: Received 'save' event")
     root = tkinter.Tk()
     filename = asksaveasfilename(
         parent=root,
