@@ -31,8 +31,8 @@ socket.on('connect', function() {
  * are synchronized, i.e., the client which initially triggers
  * this event sets its widgets for all other clients.
  */
-socket.on('broadcast_to_client', function(data: any) {
-    console.log("SOCKET.IO: Receiving 'broadcast_to_client' event")
+socket.on('broadcastToClient', function(data: any) {
+    console.log("SOCKET.IO: Receiving 'broadcastToClient' event")
     gWidgets = data
     renderWidgets()
 })
@@ -121,7 +121,8 @@ let gWidgets = [
         id: "TTTT",
         type: "counter",
         data: {
-            id: "QWEAA",
+            family: "Figure",
+            reference: "QWE",
             br: false,
         }
     }
@@ -258,7 +259,8 @@ function getRawCounter(): any {
         id: getUniqueId(),
         type: "counter",
         data: {
-            id: "",
+            family: "",
+            reference: "",
             br: false,
         }
     }
@@ -668,14 +670,26 @@ function controlSwitchWidgets(position: number): void {
  */
 function canvasClear(id: string): void {
     // Delete the canvas's drawing content
-    const canvas: any = document.getElementById("canvas"+id)
-    const context = canvas.getContext("2d")
-    context.clearRect(0, 0, canvas.width, canvas.height)
+    canvasFillWhite(id)
 
     // Delete associated widget data
     gPoints = []
     const index = getWidgetIndexById(id)
     gWidgets[index].data.pointsHistory = []
+}
+
+/**
+ * Fills the canvas's drawing content with a white
+ * rectangle which has the size of the canvas, thereby
+ * creating a completely white canvas.
+ *
+ * @param id The canvas's base ID
+ */
+function canvasFillWhite(id: string): void {
+    const canvas: any = document.getElementById("canvas"+id)
+    const context = canvas.getContext("2d")
+    context.fillStyle = "white"
+    context.fillRect(0, 0, canvas.width, canvas.height)
 }
 
 /**
@@ -744,10 +758,7 @@ function canvasMove(id: string, xMove: number, yMove: number): void {
         gWidgets[index].data.pointsHistory[i].y += yMove
     }
 
-    const canvas: any = document.getElementById("canvas"+id)
-    const context = canvas.getContext("2d")
-    context.clearRect(0, 0, canvas.width, canvas.height)
-
+    canvasFillWhite(id)
     canvasDrawPointsOnIt(id, gWidgets[index].data.pointsHistory)
 }
 
@@ -825,22 +836,34 @@ function captionChangeText(id: string) {
 
 // COUNTER WIDGET FUNCTIONS SECTION //
 /**
- * Changes the counter Widget's data.id value to the current value
+ * Changes the counter Widget's data.family value to the current value
  * of the associated text label element's value.
  *
- * @param id The counter's base ID, which is not the data.id value
+ * @param id The counter's base ID
  */
-function counterChangeId(id: string) {
-    const input: any = document.getElementById("counterId"+id)
+function counterChangeFamily(id: string) {
+    const input: any = document.getElementById("counterFamily"+id)
     const index = getWidgetIndexById(id)
-    gWidgets[index].data.id = input.value
+    gWidgets[index].data.family = input.value
+}
+
+/**
+ * Changes the counter Widget's data.reference value to the current value
+ * of the associated text label element's value.
+ *
+ * @param id The counter's base ID
+ */
+ function counterChangeReference(id: string) {
+    const input: any = document.getElementById("counterReference"+id)
+    const index = getWidgetIndexById(id)
+    gWidgets[index].data.family = input.value
 }
 
 /**
  * Switches the counter Widget instance's br boolean value
  * to the value of the associated checkbox.
  *
- * @param id THe counter's base ID
+ * @param id The counter's base ID
  */
 function counterSwitchBr(id: string) {
     const checkbox: any = document.getElementById("boxBr"+id)
@@ -856,21 +879,46 @@ function counterSwitchBr(id: string) {
 // MENU WIDGET FUNCTIONS //
 /**
  * Emits a Socket.IO call to the server so that it is triggered
+ * to start its JSON export routine. As data, the current global
+ * widgets are sent.
+ * Additionally, for all canvases, base64 JPEG representations of their
+ * drawing content are added as information.
+ */
+ function menuExport() {
+    console.log("SOCKET.IO: Emitting 'save' event")
+    let widgetsWithBase64 = gWidgets
+    for(let i = 0; i< widgetsWithBase64.length; i++) {
+        if (widgetsWithBase64[i].type != "canvas") {
+            continue
+        }
+        const canvas: any = document.getElementById("canvas"+widgetsWithBase64[i].id)
+        // We fill the canvas with white color in order to the
+        // the otherwise black background white
+        canvasClear(widgetsWithBase64[i].id)
+        canvasDrawPointsOnIt(widgetsWithBase64[i].id, widgetsWithBase64[i].data.pointsHistory)
+        const base64str = canvas.toDataURL("image/jpeg")
+        widgetsWithBase64[i].data["base64"] = base64str
+    }
+    socket.emit("export", widgetsWithBase64)
+}
+
+/**
+ * Emits a Socket.IO call to the server so that it is triggered
  * to start its JSON loading routine. The server will answer
  * with a client broadcast if the loading is successful.
  */
  function menuLoad() {
-    console.log("Emitting 'load' event")
+    console.log("SOCKET.IO: Emitting 'load' event")
     socket.emit("load", "")
 }
 
 /**
  * Emits a Socket.IO call to the server so that it is triggered
  * to start its JSON saving routine. As data, the current global
- * are sent.
+ * widgets are sent.
  */
 function menuSave() {
-    console.log("Emitting 'save' event")
+    console.log("SOCKET.IO: Emitting 'save' event")
     socket.emit("save", gWidgets)
 }
 
@@ -917,19 +965,19 @@ function textareaAddHyperlink(id: string) {
 }
 
 /**
- * Add the symbols "{{{ID}}}" to the text widget's
+ * Add the symbols "{CAPTION{ID}CAPTION}" to the text widget's
  * textarea, according to the textareaInsert
  * logic. The symbols are our general expression
- * for an anchor reference.
+ * for a caption ID.
  *
  * @param id The text widget's base ID
  */
-function textareaAddAnchor(id: string) {
-    textareaInsert(id, "{{{ID}}}", false)
+function textareaAddCaption(id: string) {
+    textareaInsert(id, "{CAPTION{ID}CAPTION}", false)
 }
 
 /**
- * Add the symbols "{{{ID}}}" to the text widget's
+ * Add the symbols "{COUNTER{REFERENCE}COUNTER}" to the text widget's
  * textarea, according to the textareaInsert
  * logic. The symbols are our general expression
  * for a counter reference.
@@ -937,7 +985,7 @@ function textareaAddAnchor(id: string) {
  * @param id The text widget's base ID
  */
 function textareaAddCounter(id: string) {
-    textareaInsert(id, "{{{{ID}}}}", false)
+    textareaInsert(id, "{COUNTER{REFERENCE}COUNTER}", false)
 }
 
 /**
@@ -1221,6 +1269,7 @@ function renderCanvasDiv(widget: any) {
 
     document.body.appendChild(div)
 
+    canvasFillWhite(id)
     canvasDrawPointsOnIt(id, widget.data.pointsHistory)
 }
 
@@ -1273,11 +1322,27 @@ function renderCounterDiv(widget: any) {
     let id = widget.id
     let div = documentAddDiv("divCounter"+id)
 
-    const labelId = documentAddLabel("counterId"+id, "Counter ID: ")
-    const inputId = documentAddTextlineInput("counterId"+id, "counterId", widget.data.id, "2")
-    inputId.onkeyup = function () { counterChangeId(id) }
-    div.appendChild(labelId)
-    div.appendChild(inputId)
+    const labelFamily = documentAddLabel("counterFamily"+id, "Counter family (required): ")
+    const inputFamily = documentAddTextlineInput(
+        "counterFamily"+id,
+        "counterFamily",
+        widget.data.family,
+        "2"
+    )
+    inputFamily.onkeyup = function () { counterChangeFamily(id) }
+    div.appendChild(labelFamily)
+    div.appendChild(inputFamily)
+
+    const labelReference = documentAddLabel("counterReference"+id, " Reference (optional): ")
+    const inputReferece = documentAddTextlineInput(
+        "counterReference"+id,
+        "counterReference",
+        widget.data.reference,
+        "2"
+    )
+    inputReferece.onkeyup = function () { counterChangeReference(id) }
+    div.appendChild(labelReference)
+    div.appendChild(inputReferece)
 
     const checkboxBr = documentAddCheckboxInput("boxBr"+id, "br", widget.data.br,
         function() { counterSwitchBr(id) })
@@ -1339,6 +1404,8 @@ function renderMenuDiv() {
     div.appendChild(loadButton)
     const saveButton = documentAddButton("saveButton", function() { menuSave() }, "Save...")
     div.appendChild(saveButton)
+    const exportButton = documentAddButton("exportButton", function() { menuExport() }, "Export...")
+    div.appendChild(exportButton)
 
     const hr = document.createElement("hr")
     div.appendChild(hr)
@@ -1411,12 +1478,12 @@ function renderTextDiv(widget: any) {
         "Hyperlink"
     )
     div.appendChild(buttonHyperlink)
-    const buttonAnchor = documentAddButton(
-        "buttonAnchor"+id,
-        function() { textareaAddAnchor(id) },
-        "Anchor"
+    const buttonCaption = documentAddButton(
+        "buttonCaption"+id,
+        function() { textareaAddCaption(id) },
+        "Caption"
     )
-    div.appendChild(buttonAnchor)
+    div.appendChild(buttonCaption)
     const buttonCounter = documentAddButton(
         "buttonCounter"+id,
         function() { textareaAddCounter(id) },

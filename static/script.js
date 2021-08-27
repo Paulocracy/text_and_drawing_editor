@@ -15,8 +15,8 @@ socket.on('connect', function () {
  * are synchronized, i.e., the client which initially triggers
  * this event sets its widgets for all other clients.
  */
-socket.on('broadcast_to_client', function (data) {
-    console.log("SOCKET.IO: Receiving 'broadcast_to_client' event");
+socket.on('broadcastToClient', function (data) {
+    console.log("SOCKET.IO: Receiving 'broadcastToClient' event");
     gWidgets = data;
     renderWidgets();
 });
@@ -99,7 +99,8 @@ var gWidgets = [
         id: "TTTT",
         type: "counter",
         data: {
-            id: "QWEAA",
+            family: "Figure",
+            reference: "QWE",
             br: false
         }
     }
@@ -227,7 +228,8 @@ function getRawCounter() {
         id: getUniqueId(),
         type: "counter",
         data: {
-            id: "",
+            family: "",
+            reference: "",
             br: false
         }
     };
@@ -599,13 +601,24 @@ function canvasAddPoint(event, id, hasVisibleLineToIt, setStartPoint) {
  */
 function canvasClear(id) {
     // Delete the canvas's drawing content
-    var canvas = document.getElementById("canvas" + id);
-    var context = canvas.getContext("2d");
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    canvasFillWhite(id);
     // Delete associated widget data
     gPoints = [];
     var index = getWidgetIndexById(id);
     gWidgets[index].data.pointsHistory = [];
+}
+/**
+ * Fills the canvas's drawing content with a white
+ * rectangle which has the size of the canvas, thereby
+ * creating a completely white canvas.
+ *
+ * @param id The canvas's base ID
+ */
+function canvasFillWhite(id) {
+    var canvas = document.getElementById("canvas" + id);
+    var context = canvas.getContext("2d");
+    context.fillStyle = "white";
+    context.fillRect(0, 0, canvas.width, canvas.height);
 }
 /**
  * Draws the given list of Point[] on the canvas with the
@@ -667,9 +680,7 @@ function canvasMove(id, xMove, yMove) {
         gWidgets[index].data.pointsHistory[i].x += xMove;
         gWidgets[index].data.pointsHistory[i].y += yMove;
     }
-    var canvas = document.getElementById("canvas" + id);
-    var context = canvas.getContext("2d");
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    canvasFillWhite(id);
     canvasDrawPointsOnIt(id, gWidgets[index].data.pointsHistory);
 }
 /**
@@ -730,21 +741,32 @@ function captionChangeText(id) {
 }
 // COUNTER WIDGET FUNCTIONS SECTION //
 /**
- * Changes the counter Widget's data.id value to the current value
+ * Changes the counter Widget's data.family value to the current value
  * of the associated text label element's value.
  *
- * @param id The counter's base ID, which is not the data.id value
+ * @param id The counter's base ID
  */
-function counterChangeId(id) {
-    var input = document.getElementById("counterId" + id);
+function counterChangeFamily(id) {
+    var input = document.getElementById("counterFamily" + id);
     var index = getWidgetIndexById(id);
-    gWidgets[index].data.id = input.value;
+    gWidgets[index].data.family = input.value;
+}
+/**
+ * Changes the counter Widget's data.reference value to the current value
+ * of the associated text label element's value.
+ *
+ * @param id The counter's base ID
+ */
+function counterChangeReference(id) {
+    var input = document.getElementById("counterReference" + id);
+    var index = getWidgetIndexById(id);
+    gWidgets[index].data.family = input.value;
 }
 /**
  * Switches the counter Widget instance's br boolean value
  * to the value of the associated checkbox.
  *
- * @param id THe counter's base ID
+ * @param id The counter's base ID
  */
 function counterSwitchBr(id) {
     var checkbox = document.getElementById("boxBr" + id);
@@ -754,20 +776,44 @@ function counterSwitchBr(id) {
 // MENU WIDGET FUNCTIONS //
 /**
  * Emits a Socket.IO call to the server so that it is triggered
+ * to start its JSON export routine. As data, the current global
+ * widgets are sent.
+ * Additionally, for all canvases, base64 JPEG representations of their
+ * drawing content are added as information.
+ */
+function menuExport() {
+    console.log("SOCKET.IO: Emitting 'save' event");
+    var widgetsWithBase64 = gWidgets;
+    for (var i = 0; i < widgetsWithBase64.length; i++) {
+        if (widgetsWithBase64[i].type != "canvas") {
+            continue;
+        }
+        var canvas = document.getElementById("canvas" + widgetsWithBase64[i].id);
+        // We fill the canvas with white color in order to the
+        // the otherwise black background white
+        canvasClear(widgetsWithBase64[i].id);
+        canvasDrawPointsOnIt(widgetsWithBase64[i].id, widgetsWithBase64[i].data.pointsHistory);
+        var base64str = canvas.toDataURL("image/jpeg");
+        widgetsWithBase64[i].data["base64"] = base64str;
+    }
+    socket.emit("export", widgetsWithBase64);
+}
+/**
+ * Emits a Socket.IO call to the server so that it is triggered
  * to start its JSON loading routine. The server will answer
  * with a client broadcast if the loading is successful.
  */
 function menuLoad() {
-    console.log("Emitting 'load' event");
+    console.log("SOCKET.IO: Emitting 'load' event");
     socket.emit("load", "");
 }
 /**
  * Emits a Socket.IO call to the server so that it is triggered
  * to start its JSON saving routine. As data, the current global
- * are sent.
+ * widgets are sent.
  */
 function menuSave() {
-    console.log("Emitting 'save' event");
+    console.log("SOCKET.IO: Emitting 'save' event");
     socket.emit("save", gWidgets);
 }
 // TEXT WIDGET FUNCTIONS SECTION //
@@ -805,18 +851,18 @@ function textareaAddHyperlink(id) {
     textareaInsert(id, "[Text](URL)", false);
 }
 /**
- * Add the symbols "{{{ID}}}" to the text widget's
+ * Add the symbols "{CAPTION{ID}CAPTION}" to the text widget's
  * textarea, according to the textareaInsert
  * logic. The symbols are our general expression
- * for an anchor reference.
+ * for a caption ID.
  *
  * @param id The text widget's base ID
  */
-function textareaAddAnchor(id) {
-    textareaInsert(id, "{{{ID}}}", false);
+function textareaAddCaption(id) {
+    textareaInsert(id, "{CAPTION{ID}CAPTION}", false);
 }
 /**
- * Add the symbols "{{{ID}}}" to the text widget's
+ * Add the symbols "{COUNTER{REFERENCE}COUNTER}" to the text widget's
  * textarea, according to the textareaInsert
  * logic. The symbols are our general expression
  * for a counter reference.
@@ -824,7 +870,7 @@ function textareaAddAnchor(id) {
  * @param id The text widget's base ID
  */
 function textareaAddCounter(id) {
-    textareaInsert(id, "{{{{ID}}}}", false);
+    textareaInsert(id, "{COUNTER{REFERENCE}COUNTER}", false);
 }
 /**
  * Add the symbols "<br>" to the text widget's
@@ -1066,6 +1112,7 @@ function renderCanvasDiv(widget) {
     }
     div.appendChild(canvas);
     document.body.appendChild(div);
+    canvasFillWhite(id);
     canvasDrawPointsOnIt(id, widget.data.pointsHistory);
 }
 /**
@@ -1111,11 +1158,16 @@ function renderCaptionDiv(widget) {
 function renderCounterDiv(widget) {
     var id = widget.id;
     var div = documentAddDiv("divCounter" + id);
-    var labelId = documentAddLabel("counterId" + id, "Counter ID: ");
-    var inputId = documentAddTextlineInput("counterId" + id, "counterId", widget.data.id, "2");
-    inputId.onkeyup = function () { counterChangeId(id); };
-    div.appendChild(labelId);
-    div.appendChild(inputId);
+    var labelFamily = documentAddLabel("counterFamily" + id, "Counter family (required): ");
+    var inputFamily = documentAddTextlineInput("counterFamily" + id, "counterFamily", widget.data.family, "2");
+    inputFamily.onkeyup = function () { counterChangeFamily(id); };
+    div.appendChild(labelFamily);
+    div.appendChild(inputFamily);
+    var labelReference = documentAddLabel("counterReference" + id, " Reference (optional): ");
+    var inputReferece = documentAddTextlineInput("counterReference" + id, "counterReference", widget.data.reference, "2");
+    inputReferece.onkeyup = function () { counterChangeReference(id); };
+    div.appendChild(labelReference);
+    div.appendChild(inputReferece);
     var checkboxBr = documentAddCheckboxInput("boxBr" + id, "br", widget.data.br, function () { counterSwitchBr(id); });
     var labelBr = documentAddLabel("boxBr" + id, "Newline?");
     div.appendChild(checkboxBr);
@@ -1162,6 +1214,8 @@ function renderMenuDiv() {
     div.appendChild(loadButton);
     var saveButton = documentAddButton("saveButton", function () { menuSave(); }, "Save...");
     div.appendChild(saveButton);
+    var exportButton = documentAddButton("exportButton", function () { menuExport(); }, "Export...");
+    div.appendChild(exportButton);
     var hr = document.createElement("hr");
     div.appendChild(hr);
     document.body.appendChild(div);
@@ -1212,8 +1266,8 @@ function renderTextDiv(widget) {
     div.appendChild(buttonItalic);
     var buttonHyperlink = documentAddButton("buttonHyperlink" + id, function () { textareaAddHyperlink(id); }, "Hyperlink");
     div.appendChild(buttonHyperlink);
-    var buttonAnchor = documentAddButton("buttonAnchor" + id, function () { textareaAddAnchor(id); }, "Anchor");
-    div.appendChild(buttonAnchor);
+    var buttonCaption = documentAddButton("buttonCaption" + id, function () { textareaAddCaption(id); }, "Caption");
+    div.appendChild(buttonCaption);
     var buttonCounter = documentAddButton("buttonCounter" + id, function () { textareaAddCounter(id); }, "Counter");
     div.appendChild(buttonCounter);
     var buttonNewline = documentAddButton("buttonNewline" + id, function () { textareaAddNewline(id); }, "Newline");
