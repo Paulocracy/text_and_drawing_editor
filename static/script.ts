@@ -22,7 +22,7 @@ var socket = io()
  * The "connect" event tells the consolel-uplooking user that
  * the connection to the server works.
  */
-socket.on('connect', function() {
+socket.on('connect', function(): void {
     console.log("SOCKET.IO: Server connected")
 })
 
@@ -31,7 +31,7 @@ socket.on('connect', function() {
  * are synchronized, i.e., the client which initially triggers
  * this event sets its widgets for all other clients.
  */
-socket.on('broadcastToClient', function(data: any) {
+socket.on('broadcastToClient', function(data: any): void {
     console.log("SOCKET.IO: Receiving 'broadcastToClient' event")
     gWidgets = data
     renderWidgets()
@@ -295,7 +295,8 @@ function getRawCounter(): any {
  * last line.
  * @returns
  */
-function getPoint(x: number, y: number, lineWidth: number, color: string, hasVisibleLineToIt: boolean) {
+function getPoint(x: number, y: number, lineWidth: number,
+                  color: string, hasVisibleLineToIt: boolean): any {
     return {
         x: x,
         y: y,
@@ -308,7 +309,7 @@ function getPoint(x: number, y: number, lineWidth: number, color: string, hasVis
 
 
 
-// DOCUMENT-AFFENCTING FUNCTIONS SECTION //
+// DOCUMENT-WIDE FUNCTIONS SECTION //
 /**
  * Creates a button in the current HTML document and
  * returns this new button instance.
@@ -459,7 +460,7 @@ function documentAddTextarea(id: string, text: string, cols: number,
     textarea.rows = rows
     // Auto-resize height thanks to the answer of
     // https://stackoverflow.com/questions/7745741/auto-expanding-textarea
-    textarea.oninput = function() {
+    textarea.oninput = function(): void {
         textarea.style.height = ""
         textarea.style.height = Math.min(textarea.scrollHeight, 300) + "px"
     }
@@ -488,6 +489,33 @@ function documentAddTextlineInput(id: string, name: string, value: string,
     return input
 }
 
+/**
+ * Returns the value of the checked
+ *
+ * @param radioIds The (potentially base, see next argument) IDs of
+ * the radios.
+ * @param id This ID will be added to each of the radioIds. E.g., if
+ * the radioIds are ["A", "B", "C"] and the id is "X", this function looks
+ * for the radios with the ids "AX", "BX" and "CX".
+ * @returns The value
+ */
+function documentGetRadiosValue(radioIds: string[], id: string): string {
+    let value: string = ""
+    for (let radio of radioIds) {
+        let radioElement: any = document.getElementById(radio+id)
+        if (radioElement.checked) {
+            value = radioElement.value
+        }
+    }
+    // If no value was found, somehow, no radio is checked which
+    // should not be the case.
+    if (value == "") {
+        console.log("ERROR in documentGetRadiosValue with (1st radioIds, 2nd ID):")
+        console.log(radioIds)
+        console.log(id)
+    }
+    return value
+}
 
 
 
@@ -599,20 +627,14 @@ function controlSwitchWidgets(position: number): void {
     const canvas: any = document.getElementById("canvas"+id)
     const index = getWidgetIndexById(id)
 
-    let radios: string[] = [
+    let radiosDrawmode: string[] = [
         "radioFree",
         "radioHorizontal",
         "radioVertical",
         "radioRising",
         "radioFalling",
     ]
-    let selectedDrawmode: string
-    for (let radio of radios) {
-        let radioElement: any = document.getElementById(radio+id)
-        if (radioElement.checked) {
-            selectedDrawmode = radioElement.value
-        }
-    }
+    let selectedDrawmode: string = documentGetRadiosValue(radiosDrawmode, id)
 
     let pressure: number
     let x: number
@@ -652,20 +674,14 @@ function controlSwitchWidgets(position: number): void {
         y = gStartPoint.y + (x - gStartPoint.x)
     }
 
-    let radios2: string[] = [
+    let radiosLineWidth: string[] = [
         "radioThin",
         "radioMedium",
         "radioThick",
     ]
-    let selectedLineWidth: string
-    for (let radio of radios2) {
-        let radioElement: any = document.getElementById(radio+id)
-        if (radioElement.checked) {
-            selectedLineWidth = radioElement.value
-        }
-    }
+    let selectedLineWidth: string = documentGetRadiosValue(radiosLineWidth, id)
 
-    let radios3: string[] = [
+    let radiosColor: string[] = [
         "radioBlack",
         "radioWhite",
         "radioRed",
@@ -673,13 +689,7 @@ function controlSwitchWidgets(position: number): void {
         "radioGreen",
         "radioYellow",
     ]
-    let selectedColor: string
-    for (let radio of radios3) {
-        let radioElement: any = document.getElementById(radio+id)
-        if (radioElement.checked) {
-            selectedColor = radioElement.value
-        }
-    }
+    let selectedColor: string = documentGetRadiosValue(radiosColor, id)
 
     let resultingLineWidth: number = Math.log(pressure+1)
     if (selectedLineWidth == "thin") {
@@ -841,7 +851,7 @@ function canvasResize(id: string): void {
  *
  * @param id The caption's base ID
  */
-function captionChangeLevel(id: string) {
+function captionChangeLevel(id: string): void {
     const select: any = document.getElementById("selectLevel"+id)
     const level = select.value
     const index = getWidgetIndexById(id)
@@ -854,7 +864,7 @@ function captionChangeLevel(id: string) {
  *
  * @param id The caption's base ID, which is not the data.id value
  */
-function captionChangeId(id: string) {
+function captionChangeId(id: string): void {
     const input: any = document.getElementById("captionId"+id)
     const index = getWidgetIndexById(id)
     gWidgets[index].data.id = input.value
@@ -866,7 +876,7 @@ function captionChangeId(id: string) {
  *
  * @param id The caption's base ID
  */
-function captionChangeText(id: string) {
+function captionChangeText(id: string): void {
     const input: any = document.getElementById("captionText"+id)
     const index = getWidgetIndexById(id)
     gWidgets[index].data.text = input.value
@@ -884,7 +894,7 @@ function captionChangeText(id: string) {
  *
  * @param id The counter's base ID
  */
-function counterChangeFamily(id: string) {
+function counterChangeFamily(id: string): void {
     const input: any = document.getElementById("counterFamily"+id)
     const index = getWidgetIndexById(id)
     gWidgets[index].data.family = input.value
@@ -896,7 +906,7 @@ function counterChangeFamily(id: string) {
  *
  * @param id The counter's base ID
  */
- function counterChangeReference(id: string) {
+ function counterChangeReference(id: string): void {
     const input: any = document.getElementById("counterReference"+id)
     const index = getWidgetIndexById(id)
     gWidgets[index].data.family = input.value
@@ -908,7 +918,7 @@ function counterChangeFamily(id: string) {
  *
  * @param id The counter's base ID
  */
-function counterSwitchBr(id: string) {
+function counterSwitchBr(id: string): void {
     const checkbox: any = document.getElementById("boxBr"+id)
     const index = getWidgetIndexById(id)
     gWidgets[index].data.br = checkbox.checked
@@ -927,8 +937,7 @@ function counterSwitchBr(id: string) {
  * Additionally, for all canvases, base64 JPEG representations of their
  * drawing content are added as information.
  */
- function menuExport() {
-    console.log("SOCKET.IO: Emitting 'save' event")
+ function menuExport(): void {
     let widgetsWithBase64 = gWidgets
     for(let i = 0; i< widgetsWithBase64.length; i++) {
         if (widgetsWithBase64[i].type != "canvas") {
@@ -942,6 +951,7 @@ function counterSwitchBr(id: string) {
         const base64str = canvas.toDataURL("image/jpeg")
         widgetsWithBase64[i].data["base64"] = base64str
     }
+    console.log("SOCKET.IO: Emitting 'export' event")
     socket.emit("export", widgetsWithBase64)
 }
 
@@ -950,7 +960,7 @@ function counterSwitchBr(id: string) {
  * to start its JSON loading routine. The server will answer
  * with a client broadcast if the loading is successful.
  */
- function menuLoad() {
+ function menuLoad(): void {
     console.log("SOCKET.IO: Emitting 'load' event")
     socket.emit("load", "")
 }
@@ -960,7 +970,7 @@ function counterSwitchBr(id: string) {
  * to start its JSON saving routine. As data, the current global
  * widgets are sent.
  */
-function menuSave() {
+function menuSave(): void {
     console.log("SOCKET.IO: Emitting 'save' event")
     socket.emit("save", gWidgets)
 }
@@ -979,7 +989,7 @@ function menuSave() {
  *
  * @param id The text widget's base ID
  */
-function textareaAddBold(id: string) {
+function textareaAddBold(id: string): void {
     textareaInsert(id, "*", true)
 }
 
@@ -991,7 +1001,7 @@ function textareaAddBold(id: string) {
  *
  * @param id The text widget's base ID
  */
-function textareaAddItalic(id: string) {
+function textareaAddItalic(id: string): void {
     textareaInsert(id, "_", true)
 }
 
@@ -1003,7 +1013,7 @@ function textareaAddItalic(id: string) {
  *
  * @param id The text widget's base ID
  */
-function textareaAddHyperlink(id: string) {
+function textareaAddHyperlink(id: string): void {
     textareaInsert(id, "[Text](URL)", false)
 }
 
@@ -1015,7 +1025,7 @@ function textareaAddHyperlink(id: string) {
  *
  * @param id The text widget's base ID
  */
-function textareaAddCaption(id: string) {
+function textareaAddCaption(id: string): void {
     textareaInsert(id, "{CAPTION{ID}CAPTION}", false)
 }
 
@@ -1027,7 +1037,7 @@ function textareaAddCaption(id: string) {
  *
  * @param id The text widget's base ID
  */
-function textareaAddCounter(id: string) {
+function textareaAddCounter(id: string): void {
     textareaInsert(id, "{COUNTER{REFERENCE}COUNTER}", false)
 }
 
@@ -1040,7 +1050,7 @@ function textareaAddCounter(id: string) {
  *
  * @param id The text widget's base ID
  */
-function textareaAddNewline(id: string) {
+function textareaAddNewline(id: string): void {
     textareaInsert(id, "<br>", false)
 }
 
@@ -1060,7 +1070,7 @@ function textareaAddNewline(id: string) {
  * the insert will be added at the selection's beginning only. 2) If the
  * user selected only a single character, the insert will be added there.
  */
-function textareaInsert(id: string, insert: string, multi: boolean) {
+function textareaInsert(id: string, insert: string, multi: boolean): void {
     const textarea: any = document.getElementById("textarea"+id)
     const selectionStart = textarea.selectionStart
     const selectionEnd = textarea.selectionEnd
@@ -1087,7 +1097,7 @@ function textareaInsert(id: string, insert: string, multi: boolean) {
  * @param color The bordercolor to which the associated textarea's
  * global widget representation data shall be set
  */
-function textareaSetBordercolor(id: string, color: string) {
+function textareaSetBordercolor(id: string, color: string): void {
     let index = getWidgetIndexById(id)
     gWidgets[index].data.bordercolor = color
     const textarea = document.getElementById("textarea"+id)
@@ -1105,7 +1115,7 @@ function textareaSetBordercolor(id: string, color: string) {
  * @param id The text widget's base ID
  * @param font The font which will be set for the text widget
  */
-function textareaSetFont(id: string, font: string) {
+function textareaSetFont(id: string, font: string): void {
     let index = getWidgetIndexById(id)
     gWidgets[index].data.font = font
 }
@@ -1116,7 +1126,7 @@ function textareaSetFont(id: string, font: string) {
  *
  * @param id The text widget's base ID
  */
-function textareaUpdateWidgetText(id: string) {
+function textareaUpdateWidgetText(id: string): void {
     let index = getWidgetIndexById(id)
     const textarea: any = document.getElementById("textarea"+id)
     gWidgets[index].data.text = textarea.value
@@ -1137,7 +1147,7 @@ function textareaUpdateWidgetText(id: string) {
  *
  * @param widget The associated widget object
  */
-function renderCanvasDiv(widget: any) {
+function renderCanvasDiv(widget: any): void {
     let id = widget.id
     let index = getWidgetIndexById(id)
     let div = documentAddDiv("divCanvas"+id)
@@ -1159,15 +1169,21 @@ function renderCanvasDiv(widget: any) {
     const rightButton = documentAddButton(
         "buttonMoveRight"+id,
         function() { canvasMove(id, 3, 0) },
-        "Move left"
+        "Move right"
     )
     moveDiv.appendChild(rightButton)
     const downButton = documentAddButton(
         "buttonMoveDown"+id,
         function() { canvasMove(id, 0, 3) },
-        "Move left"
+        "Move down"
     )
     moveDiv.appendChild(downButton)
+    const upButton = documentAddButton(
+        "buttonMoveUp"+id,
+        function() { canvasMove(id, 0, -3) },
+        "Move up"
+    )
+    moveDiv.appendChild(upButton)
     div.appendChild(moveDiv)
 
     // Canvas size div
@@ -1326,7 +1342,7 @@ function renderCanvasDiv(widget: any) {
  *
  * @param widget The associated widget object
  */
-function renderCaptionDiv(widget: any) {
+function renderCaptionDiv(widget: any): void {
     let id = widget.id
     let div = documentAddDiv("divCaption"+id)
 
@@ -1362,7 +1378,7 @@ function renderCaptionDiv(widget: any) {
  *
  * @param widget The associated widget object
  */
-function renderCounterDiv(widget: any) {
+function renderCounterDiv(widget: any): void {
     let id = widget.id
     let div = documentAddDiv("divCounter"+id)
 
@@ -1373,7 +1389,7 @@ function renderCounterDiv(widget: any) {
         widget.data.family,
         "10"
     )
-    inputFamily.onkeyup = function () { counterChangeFamily(id) }
+    inputFamily.onkeyup = function (): void { counterChangeFamily(id) }
     div.appendChild(labelFamily)
     div.appendChild(inputFamily)
 
@@ -1384,7 +1400,7 @@ function renderCounterDiv(widget: any) {
         widget.data.reference,
         "10"
     )
-    inputReferece.onkeyup = function () { counterChangeReference(id) }
+    inputReferece.onkeyup = function (): void { counterChangeReference(id) }
     div.appendChild(labelReference)
     div.appendChild(inputReferece)
 
@@ -1405,29 +1421,29 @@ function renderCounterDiv(widget: any) {
  *
  * @param position The control's position
  */
-function renderControlDiv(position: number) {
+function renderControlDiv(position: number): void {
     let div = documentAddDiv("divControl"+position)
 
     const addCanvas = documentAddButton("buttonAddCanvas"+position,
-        function() { controlAddCanvas(position) }, "+Canvas")
+        function(): void { controlAddCanvas(position) }, "+Canvas")
     div.appendChild(addCanvas)
     const addText = documentAddButton("buttonAddText"+position,
-        function() { controlAddText(position) }, "+Text")
+        function(): void { controlAddText(position) }, "+Text")
     div.appendChild(addText)
     const addCaption = documentAddButton("buttonAddCaption"+position,
-        function() { controlAddCaption(position) }, "+Caption")
+        function(): void { controlAddCaption(position) }, "+Caption")
     div.appendChild(addCaption)
     const addCounter = documentAddButton("buttonAddCounter"+position,
-        function() { controlAddCounter(position) }, "+Counter")
+        function(): void { controlAddCounter(position) }, "+Counter")
     div.appendChild(addCounter)
     const switchWidgets = documentAddButton("buttonSwitch"+position,
-        function() { controlSwitchWidgets(position) }, "/\\ Switch \\/")
+        function(): void { controlSwitchWidgets(position) }, "/\\ Switch \\/")
     div.appendChild(switchWidgets)
     const deletePrevious = documentAddButton("buttonDeletePrevious"+position,
-        function() { controlDeletePrevious(position) }, "/\\ Delete")
+        function(): void { controlDeletePrevious(position) }, "/\\ Delete")
     div.appendChild(deletePrevious)
     const broadcast = documentAddButton("buttonBroadcast"+position,
-        function() { controlBroadcast() }, "BROADCAST")
+        function(): void { controlBroadcast() }, "BROADCAST")
     div.appendChild(broadcast)
 
     const hr = document.createElement("hr")
@@ -1442,13 +1458,22 @@ function renderControlDiv(position: number) {
  * the addition of a div. This div is added at the bottom
  * of the HTML element.
  */
-function renderMenuDiv() {
+function renderMenuDiv(): void {
     let div = documentAddDiv("divMenu")
-    const loadButton = documentAddButton("loadButton", function() { menuLoad() }, "Load...")
+    const loadButton = documentAddButton(
+        "loadButton",
+        function(): void { menuLoad() }, "Load..."
+    )
     div.appendChild(loadButton)
-    const saveButton = documentAddButton("saveButton", function() { menuSave() }, "Save...")
+    const saveButton = documentAddButton(
+        "saveButton",
+        function(): void { menuSave() }, "Save..."
+    )
     div.appendChild(saveButton)
-    const exportButton = documentAddButton("exportButton", function() { menuExport() }, "Export...")
+    const exportButton = documentAddButton(
+        "exportButton",
+        function(): void { menuExport() }, "Export..."
+    )
     div.appendChild(exportButton)
 
     const hr = document.createElement("hr")
@@ -1466,7 +1491,7 @@ function renderMenuDiv() {
  *
  * @param widget The associated widget object
  */
-function renderTextDiv(widget: any) {
+function renderTextDiv(widget: any): void {
     let id = widget.id
     let div = documentAddDiv("divText"+id)
 
@@ -1474,13 +1499,13 @@ function renderTextDiv(widget: any) {
     let bordercolorDiv = documentAddDiv("textBordercolor"+id)
     const isNone = widget.data.bordercolor == "none"
     const radioNone = documentAddRadioInput("radioNone"+id, "bordercolor", "none", isNone,
-        function() { textareaSetBordercolor(id, "none") })
+        function(): void { textareaSetBordercolor(id, "none") })
     const labelNone = documentAddLabel("radioNone"+id, "None")
     bordercolorDiv.appendChild(radioNone)
     bordercolorDiv.appendChild(labelNone)
     const isBlack = widget.data.bordercolor == "black"
     const radioBlack = documentAddRadioInput("radioBlack"+id, "bordercolor", "black", isBlack,
-        function() { textareaSetBordercolor(id, "none") })
+        function(): void { textareaSetBordercolor(id, "none") })
     const labelBlack = documentAddLabel("radioBlack"+id, "Black")
     bordercolorDiv.appendChild(radioBlack)
     bordercolorDiv.appendChild(labelBlack)
@@ -1490,14 +1515,14 @@ function renderTextDiv(widget: any) {
     let fontDiv = documentAddDiv("textBordercolor"+id)
     const isStandard = widget.data.font == "standard"
     const radioStandard = documentAddRadioInput("radioStandard"+id, "font", "standard", isStandard,
-        function() { textareaSetFont(id, "none") })
+        function(): void { textareaSetFont(id, "none") })
     const labelStandard = documentAddLabel("radioStandard"+id, "Standard")
     fontDiv.appendChild(radioStandard)
     fontDiv.appendChild(labelStandard)
     div.appendChild(fontDiv)
     const isMonospaced = widget.data.font == "monospaced"
     const radioMonospaced = documentAddRadioInput("radioMonospaced"+id, "font", "monospaced", isMonospaced,
-        function() { textareaSetFont(id, "monospaced") })
+        function(): void { textareaSetFont(id, "monospaced") })
     const labelMonospaced = documentAddLabel("radioMonospaced"+id, "Monospaced")
     fontDiv.appendChild(radioMonospaced)
     fontDiv.appendChild(labelMonospaced)
@@ -1506,37 +1531,37 @@ function renderTextDiv(widget: any) {
     // Text addition buttons
     const buttonBold = documentAddButton(
         "buttonBold"+id,
-        function() { textareaAddBold(id) },
+        function(): void { textareaAddBold(id) },
         "Bold"
     )
     div.appendChild(buttonBold)
     const buttonItalic = documentAddButton(
         "buttonItalic"+id,
-        function() { textareaAddItalic(id) },
+        function(): void { textareaAddItalic(id) },
         "Italic"
     )
     div.appendChild(buttonItalic)
     const buttonHyperlink = documentAddButton(
         "buttonHyperlink"+id,
-        function() { textareaAddHyperlink(id) },
+        function(): void { textareaAddHyperlink(id) },
         "Hyperlink"
     )
     div.appendChild(buttonHyperlink)
     const buttonCaption = documentAddButton(
         "buttonCaption"+id,
-        function() { textareaAddCaption(id) },
+        function(): void { textareaAddCaption(id) },
         "Caption"
     )
     div.appendChild(buttonCaption)
     const buttonCounter = documentAddButton(
         "buttonCounter"+id,
-        function() { textareaAddCounter(id) },
+        function(): void { textareaAddCounter(id) },
         "Counter"
     )
     div.appendChild(buttonCounter)
     const buttonNewline = documentAddButton(
         "buttonNewline"+id,
-        function() { textareaAddNewline(id) },
+        function(): void { textareaAddNewline(id) },
         "Newline"
     )
     div.appendChild(buttonNewline)
@@ -1552,7 +1577,7 @@ function renderTextDiv(widget: any) {
     div.appendChild(textarea)
 
     // Events
-    textarea.onkeyup = function() { textareaUpdateWidgetText(id) }
+    textarea.onkeyup = function(): void { textareaUpdateWidgetText(id) }
 
     document.body.appendChild(div)
 
