@@ -267,7 +267,7 @@ function getPoint(x, y, lineWidth, color, hasVisibleLineToIt) {
         hasVisibleLineToIt: hasVisibleLineToIt
     };
 }
-// DOCUMENT-AFFENCTING FUNCTIONS SECTION //
+// DOCUMENT-WIDE FUNCTIONS SECTION //
 /**
  * Creates a button in the current HTML document and
  * returns this new button instance.
@@ -434,6 +434,34 @@ function documentAddTextlineInput(id, name, value, size) {
     input.name = name;
     return input;
 }
+/**
+ * Returns the value of the checked
+ *
+ * @param radioIds The (potentially base, see next argument) IDs of
+ * the radios.
+ * @param id This ID will be added to each of the radioIds. E.g., if
+ * the radioIds are ["A", "B", "C"] and the id is "X", this function looks
+ * for the radios with the ids "AX", "BX" and "CX".
+ * @returns The value
+ */
+function documentGetRadiosValue(radioIds, id) {
+    var value = "";
+    for (var _i = 0, radioIds_1 = radioIds; _i < radioIds_1.length; _i++) {
+        var radio = radioIds_1[_i];
+        var radioElement = document.getElementById(radio + id);
+        if (radioElement.checked) {
+            value = radioElement.value;
+        }
+    }
+    // If no value was found, somehow, no radio is checked which
+    // should not be the case.
+    if (value == "") {
+        console.log("ERROR in documentGetRadiosValue with (1st radioIds, 2nd ID):");
+        console.log(radioIds);
+        console.log(id);
+    }
+    return value;
+}
 // CONTROL WIDGET FUNCTION SECTION //
 /**
  * Adds a raw canvas widget in the global widgets list
@@ -528,21 +556,14 @@ function controlSwitchWidgets(position) {
 function canvasAddPoint(event, id, hasVisibleLineToIt, setStartPoint) {
     var canvas = document.getElementById("canvas" + id);
     var index = getWidgetIndexById(id);
-    var radios = [
+    var radiosDrawmode = [
         "radioFree",
         "radioHorizontal",
         "radioVertical",
         "radioRising",
         "radioFalling",
     ];
-    var selectedDrawmode;
-    for (var _i = 0, radios_1 = radios; _i < radios_1.length; _i++) {
-        var radio = radios_1[_i];
-        var radioElement = document.getElementById(radio + id);
-        if (radioElement.checked) {
-            selectedDrawmode = radioElement.value;
-        }
-    }
+    var selectedDrawmode = documentGetRadiosValue(radiosDrawmode, id);
     var pressure;
     var x;
     var y;
@@ -586,20 +607,13 @@ function canvasAddPoint(event, id, hasVisibleLineToIt, setStartPoint) {
         x = pageXYhandler.pageX - canvas.offsetLeft;
         y = gStartPoint.y + (x - gStartPoint.x);
     }
-    var radios2 = [
+    var radiosLineWidth = [
         "radioThin",
         "radioMedium",
         "radioThick",
     ];
-    var selectedLineWidth;
-    for (var _a = 0, radios2_1 = radios2; _a < radios2_1.length; _a++) {
-        var radio = radios2_1[_a];
-        var radioElement = document.getElementById(radio + id);
-        if (radioElement.checked) {
-            selectedLineWidth = radioElement.value;
-        }
-    }
-    var radios3 = [
+    var selectedLineWidth = documentGetRadiosValue(radiosLineWidth, id);
+    var radiosColor = [
         "radioBlack",
         "radioWhite",
         "radioRed",
@@ -607,14 +621,7 @@ function canvasAddPoint(event, id, hasVisibleLineToIt, setStartPoint) {
         "radioGreen",
         "radioYellow",
     ];
-    var selectedColor;
-    for (var _b = 0, radios3_1 = radios3; _b < radios3_1.length; _b++) {
-        var radio = radios3_1[_b];
-        var radioElement = document.getElementById(radio + id);
-        if (radioElement.checked) {
-            selectedColor = radioElement.value;
-        }
-    }
+    var selectedColor = documentGetRadiosValue(radiosColor, id);
     var resultingLineWidth = Math.log(pressure + 1);
     if (selectedLineWidth == "thin") {
         resultingLineWidth *= 5.0;
@@ -826,7 +833,6 @@ function counterSwitchBr(id) {
  * drawing content are added as information.
  */
 function menuExport() {
-    console.log("SOCKET.IO: Emitting 'save' event");
     var widgetsWithBase64 = gWidgets;
     for (var i = 0; i < widgetsWithBase64.length; i++) {
         if (widgetsWithBase64[i].type != "canvas") {
@@ -840,6 +846,7 @@ function menuExport() {
         var base64str = canvas.toDataURL("image/jpeg");
         widgetsWithBase64[i].data["base64"] = base64str;
     }
+    console.log("SOCKET.IO: Emitting 'export' event");
     socket.emit("export", widgetsWithBase64);
 }
 /**
@@ -862,15 +869,15 @@ function menuSave() {
 }
 // TEXT WIDGET FUNCTIONS SECTION //
 /**
- * Add the symbol(s) "*" to the text widget's
+ * Add the symbol(s) "**" to the text widget's
  * textarea, according to the textareaInsert
- * logic. In Markdown, two "*" stand for bold
+ * logic. In Markdown, two "**" stand for bold
  * text.
  *
  * @param id The text widget's base ID
  */
 function textareaAddBold(id) {
-    textareaInsert(id, "*", true);
+    textareaInsert(id, "**", true);
 }
 /**
  * Add the symbol(s) "_" to the text widget's
@@ -1023,10 +1030,12 @@ function renderCanvasDiv(widget) {
     moveDiv.appendChild(clearButton);
     var leftButton = documentAddButton("buttonMoveLeft" + id, function () { canvasMove(id, -3, 0); }, "Move left");
     moveDiv.appendChild(leftButton);
-    var rightButton = documentAddButton("buttonMoveRight" + id, function () { canvasMove(id, 3, 0); }, "Move left");
+    var rightButton = documentAddButton("buttonMoveRight" + id, function () { canvasMove(id, 3, 0); }, "Move right");
     moveDiv.appendChild(rightButton);
-    var downButton = documentAddButton("buttonMoveDown" + id, function () { canvasMove(id, 0, 3); }, "Move left");
+    var downButton = documentAddButton("buttonMoveDown" + id, function () { canvasMove(id, 0, 3); }, "Move down");
     moveDiv.appendChild(downButton);
+    var upButton = documentAddButton("buttonMoveUp" + id, function () { canvasMove(id, 0, -3); }, "Move up");
+    moveDiv.appendChild(upButton);
     div.appendChild(moveDiv);
     // Canvas size div
     var sizeDiv = documentAddDiv("canvasSize" + id);
@@ -1362,9 +1371,13 @@ function renderWidgets() {
     }
 }
 renderWidgets();
-for (var _i = 0, _a = ["touchend", "touchleave", "mouseup"]; _i < _a.length; _i++) {
+for (var _i = 0, _a = ["touchend", "touchleave", "mouseup", "keyup"]; _i < _a.length; _i++) {
     var events = _a[_i];
     document.body.addEventListener(events, function (event) {
         //
     });
 }
+window.addEventListener("beforeunload", function (event) {
+    event.preventDefault();
+    return event.returnValue = "Are you sure?";
+}, { capture: true });

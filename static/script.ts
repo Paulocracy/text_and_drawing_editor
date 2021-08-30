@@ -982,15 +982,15 @@ function menuSave(): void {
 
 // TEXT WIDGET FUNCTIONS SECTION //
 /**
- * Add the symbol(s) "*" to the text widget's
+ * Add the symbol(s) "**" to the text widget's
  * textarea, according to the textareaInsert
- * logic. In Markdown, two "*" stand for bold
+ * logic. In Markdown, two "**" stand for bold
  * text.
  *
  * @param id The text widget's base ID
  */
 function textareaAddBold(id: string): void {
-    textareaInsert(id, "*", true)
+    textareaInsert(id, "**", true)
 }
 
 /**
@@ -1615,7 +1615,7 @@ function renderWidgets(): void {
 
 renderWidgets()
 
-for (const events of ["touchend", "touchleave", "mouseup"]) {
+for (const events of ["touchend", "touchleave", "mouseup", "keyup"]) {
     document.body.addEventListener(events, function(event: any) {
         //
     })
