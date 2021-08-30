@@ -1,6 +1,9 @@
-# basic_server
+# text_and_drawing_editor
 
-*A basic configuration for a Flask Python server with JSON-based Socket.IO communication and TypeScript-derived JavaScript.*
+*A text-and-drawing editor intended for the simultaneous usage with a
+pencil-using tablet device (for drawing) and a "classical" personal computer (for writing),
+implemented in the form of a Flask server with TypeScript backend code. The
+text-and-drawing projects are saved as JSON files and can be exported as HTML files.*
 
 ## Installation
 ```
@@ -39,7 +42,7 @@ https://github.com/shuding/apple-pencil-safari-api-test
 
 * HTTPS integration protocol?
 * Bulma as responsive CSS style kit?
-* Explain "id" and "base id"?
+* Explain "id" and "base id" in the TypeScript code?
 * Typing for single widgets and the widget list by using classes and enums?
 * Follow a specific TS/JS style guide
 * Write a documentation

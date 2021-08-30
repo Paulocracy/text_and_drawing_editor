@@ -1615,8 +1615,10 @@ function renderWidgets(): void {
 
 renderWidgets()
 
+/*
 for (const events of ["touchend", "touchleave", "mouseup", "keyup"]) {
     document.body.addEventListener(events, function(event: any) {
         //
     })
 }
+*/

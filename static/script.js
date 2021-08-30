@@ -1377,7 +1377,3 @@ for (var _i = 0, _a = ["touchend", "touchleave", "mouseup", "keyup"]; _i < _a.le
         //
     });
 }
-window.addEventListener("beforeunload", function (event) {
-    event.preventDefault();
-    return event.returnValue = "Are you sure?";
-}, { capture: true });
