@@ -1371,9 +1371,10 @@ function renderWidgets() {
     }
 }
 renderWidgets();
-for (var _i = 0, _a = ["touchend", "touchleave", "mouseup", "keyup"]; _i < _a.length; _i++) {
-    var events = _a[_i];
-    document.body.addEventListener(events, function (event) {
+/*
+for (const events of ["touchend", "touchleave", "mouseup", "keyup"]) {
+    document.body.addEventListener(events, function(event: any) {
         //
-    });
+    })
 }
+*/

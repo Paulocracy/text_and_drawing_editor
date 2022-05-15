@@ -1,7 +1,9 @@
 # text_and_drawing_editor
 
+![Alt text](./resources/screenshot.png)
+
 *A text-and-drawing editor intended for the simultaneous usage with a
-pencil-using tablet device (for drawing) and a "classical" personal computer (for writing),
+pencil-using tablet device (for drawing) and a keyboard-using personal computer (for writing),
 implemented in the form of a Flask server with TypeScript backend code. The
 text-and-drawing projects are saved as JSON files and can be exported as HTML files.*
 
@@ -45,4 +47,4 @@ https://github.com/shuding/apple-pencil-safari-api-test
 * Explain "id" and "base id" in the TypeScript code?
 * Typing for single widgets and the widget list by using classes and enums?
 * Follow a specific TS/JS style guide
-* Write a documentation
+* Write documentation
